@@ -547,7 +547,28 @@ export default function ValidateMode({
                 )}
               </div>
 
-
+              {/* TRANSCRIPT TOGGLE */}
+              <div className="px-2 mb-3">
+                <div className="flex items-center justify-between mb-2">
+                  <div 
+                    onClick={() => setTranscriptOpen(!transcriptOpen)}
+                    className="text-[12px] text-blue-600 cursor-pointer hover:underline"
+                  >
+                    View transcript {transcriptOpen ? '↑' : '↓'}
+                  </div>
+                  <button 
+                    onClick={() => setAudioStage('idle')}
+                    className="text-[11px] text-gray-400 hover:text-gray-600 underline"
+                  >
+                    Re-record audio
+                  </button>
+                </div>
+                {transcriptOpen && transcript && (
+                  <div className="bg-gray-50 rounded-lg p-3 max-h-40 overflow-y-auto text-[12px] text-gray-600 leading-relaxed whitespace-pre-wrap mb-4 shadow-inner">
+                    {transcript}
+                  </div>
+                )}
+              </div>
 
               {/* AI OUTPUT PANELS */}
               
