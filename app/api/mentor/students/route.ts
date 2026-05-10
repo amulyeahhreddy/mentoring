@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
           .limit(1)
           .maybeSingle()
         return {
-          student_id: enrollment.student_id,
+          id: enrollment.student_id,
           name: profile?.name || 'Unknown',
           email: profile?.email || '',
           class_name: (enrollment.classes as any)?.name || '',

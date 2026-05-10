@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import StudentList from '@/components/mentor/StudentList'
 import BriefingMode from '@/components/mentor/BriefingMode'
@@ -45,6 +45,37 @@ export default function MentorPage() {
     if (data.students) setStudents(data.students)
   }
 
+  const handleNewSession = useCallback(async () => {
+    if (!selectedStudent?.id || !mentorId) {
+      console.error('Cannot create session: missing student or mentor')
+      return
+    }
+
+    try {
+      const res = await fetch('/api/session/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          student_id: selectedStudent.id,
+          mentor_id: mentorId,
+          session_date: new Date().toISOString().split('T')[0],
+          academic_year: '2025-26'
+        })
+      })
+      
+      const data = await res.json()
+      
+      if (data.success && data.session_id) {
+        setActiveSessionId(data.session_id)
+        setMode('session')
+      } else {
+        console.error('Failed to create session via API:', data.error)
+      }
+    } catch (error) {
+      console.error('Network error creating session:', error)
+    }
+  }, [selectedStudent, mentorId])
+
   return (
     <div className="flex h-screen bg-gray-950 text-white overflow-hidden">
       <StudentList
@@ -82,14 +113,10 @@ export default function MentorPage() {
             <BriefingMode
               selectedStudent={selectedStudent}
               mentorId={mentorId}
-              onStartSession={(sessionId: string, num: number) => {
+              onNewSession={handleNewSession}
+              onSelectSession={(sessionId: string) => {
                 setActiveSessionId(sessionId)
-                setSessionNumber(num)
                 setMode('session')
-              }}
-              onAudioProcessed={(t: string, ai: any) => {
-                setTranscript(t)
-                setAiOutput(ai)
               }}
             />
           ) : mode === 'session' ? (
@@ -97,16 +124,7 @@ export default function MentorPage() {
               selectedStudent={selectedStudent}
               mentorId={mentorId}
               activeSessionId={activeSessionId!}
-              sessionNumber={sessionNumber}
-              formData={formData}
-              setFormData={setFormData}
-              aiOutput={aiOutput}
-              transcript={transcript}
-              onAudioProcessed={(t: string, ai: any) => {
-                setTranscript(t)
-                setAiOutput(ai)
-              }}
-              onNext={() => setMode('validate')}
+              onComplete={() => setMode('validate')}
             />
           ) : mode === 'validate' ? (
             <ValidateMode
@@ -121,10 +139,10 @@ export default function MentorPage() {
           ) : (
             <ReviewMode
               selectedStudent={selectedStudent}
+              mentorId={mentorId}
               activeSessionId={activeSessionId!}
-              formData={formData}
-              aiOutput={aiOutput}
-              onFinalize={async () => {
+              onBack={() => setMode('validate')}
+              onSubmitComplete={async () => {
                 await refreshStudents()
                 setMode('briefing')
                 setActiveSessionId(null)
@@ -132,7 +150,6 @@ export default function MentorPage() {
                 setAiOutput(null)
                 setTranscript('')
               }}
-              onBack={() => setMode('validate')}
             />
           )}
         </div>
