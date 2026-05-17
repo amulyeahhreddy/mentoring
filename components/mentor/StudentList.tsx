@@ -28,94 +28,80 @@ export default function StudentList({ students, selectedStudent, onSelect }: Stu
   };
 
   return (
-    <div className="w-72 border-r border-gray-800 flex flex-col h-full bg-gray-950 shrink-0">
+    <div className="w-[256px] bg-[#1e1e2e] border-r border-white/8 flex flex-col h-full shrink-0 transition-all duration-150 ease-out">
       {/* HEADER */}
-      <div className="p-4 border-b border-gray-800 flex flex-col gap-4 shrink-0">
-        <div className="flex items-center gap-3">
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold"
-            style={{
-              backgroundColor: 'var(--color-background-info, #1e3a8a)',
-              color: 'var(--color-text-info, #bfdbfe)'
-            }}
-          >
-            M
-          </div>
-          <span className="font-semibold text-white">Mentor</span>
+      <div className="p-4 border-b border-white/8 flex flex-col gap-3 shrink-0">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-[#4f6ef7]" />
+          <span className="text-[13px] font-semibold text-[#e8e8f0]">MentorOS</span>
         </div>
-
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search students..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-1.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 pr-8"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
-            >
-              &times;
-            </button>
-          )}
+        
+        <div className="flex flex-col gap-1.5 mt-1">
+          <span className="text-[10px] uppercase tracking-widest text-[#52525e] font-medium">Students</span>
+          <div className="relative group">
+            <input
+              type="text"
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-[#2a2a3e] border border-white/10 rounded-lg px-3 py-1.5 text-[13px] text-[#e8e8f0] placeholder-[#52525e] focus:border-[#4f6ef7]/50 outline-none transition-all"
+            />
+          </div>
         </div>
       </div>
 
       {/* STUDENT LIST */}
       <div className="flex-1 overflow-y-auto">
         {filteredStudents.length === 0 ? (
-          <div className="p-8 text-center text-gray-500 text-sm">
+          <div className="p-8 text-center text-[#52525e] text-[13px]">
             No students found
           </div>
         ) : (
-          <ul className="flex flex-col">
-            {filteredStudents.map((student, index) => {
+          <div className="flex flex-col py-2">
+            {filteredStudents.map((student: any, index) => {
               const isActive = selectedStudent?.id === student.id;
+              
+              let riskColor = '';
+              if (student.risk === 'low') riskColor = 'bg-[#059669]';
+              else if (student.risk === 'medium') riskColor = 'bg-[#d97706]';
+              else if (student.risk === 'high' || student.risk === 'critical') riskColor = 'bg-[#dc2626]';
 
               return (
-                <li
+                <div
                   key={student.id ?? student.email ?? index}
                   onClick={() => onSelect(student)}
-                  className="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-900 transition-colors"
-                  style={{
-                    backgroundColor: isActive ? 'var(--color-background-secondary, #1f2937)' : 'transparent',
-                    borderLeft: isActive ? '2px solid var(--color-border-info, #3b82f6)' : '2px solid transparent'
-                  }}
+                  className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-all border-l-2 ${
+                    isActive 
+                      ? 'bg-[rgba(79,110,247,0.12)] border-[#4f6ef7]' 
+                      : 'border-transparent hover:bg-white/4'
+                  }`}
                 >
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-medium text-sm"
-                    style={{
-                      backgroundColor: 'var(--color-background-info, #1e3a8a)',
-                      color: 'var(--color-text-info, #bfdbfe)'
-                    }}
-                  >
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#4f6ef7] to-[#7c3aed] text-white text-[11px] font-semibold flex items-center justify-center shrink-0">
                     {getInitials(student.name)}
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <div className="text-[13px] font-medium text-white truncate">
+                    <div className="text-[13px] font-medium text-[#e8e8f0] truncate">
                       {student.name}
                     </div>
-                    <div className="text-[11px] text-gray-500 truncate mt-0.5">
+                    <div className="text-[11px] text-[#52525e] truncate">
                       {student.email}
                     </div>
                   </div>
 
-                  <div className="w-2 h-2 rounded-full bg-gray-500 shrink-0" />
-                </li>
+                  {riskColor && (
+                    <div className={`w-2 h-2 rounded-full ${riskColor} shrink-0`} />
+                  )}
+                </div>
               );
             })}
-          </ul>
+          </div>
         )}
       </div>
 
       {/* FOOTER */}
-      <div className="p-4 border-t border-gray-800 shrink-0">
-        <a href="#" className="text-[12px] text-gray-500 hover:text-gray-300">
-          Sign out
-        </a>
+      <div className="p-3 border-t border-white/8 shrink-0 flex justify-center">
+        <span className="text-[10px] text-[#52525e]">MentorOS</span>
       </div>
     </div>
   );

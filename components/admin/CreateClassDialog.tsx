@@ -69,21 +69,22 @@ export default function CreateClassDialog({ open, onClose, onSuccess }: CreateCl
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Create Class</h2>
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl shadow-black/10 border border-[#e4e4e9]">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-[15px] font-semibold text-[#111116]">Create Class</h2>
           <button
+            type="button"
             onClick={handleClose}
-            className="text-gray-500 hover:text-gray-700"
+            className="w-8 h-8 rounded-lg hover:bg-[#f4f4f6] flex items-center justify-center text-[#9090a0] hover:text-[#111116] transition-all"
           >
-            <X size={20} />
+            ×
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-[12px] font-medium text-[#52525e] mb-1.5">
               Class Name
             </label>
             <input
@@ -91,39 +92,42 @@ export default function CreateClassDialog({ open, onClose, onSuccess }: CreateCl
               required
               value={className}
               onChange={(e) => setClassName(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-white border border-[#d1d1db] rounded-lg text-[13px] text-[#111116] placeholder-[#9090a0] focus:border-[#4f6ef7] focus:ring-2 focus:ring-[#4f6ef7]/15 outline-none transition-all"
             />
           </div>
 
           {error && (
-            <div className="text-red-600 text-sm">
+            <div className="text-[12px] text-[#dc2626] bg-[#fef2f2] border border-[#fecaca] rounded-lg px-3 py-2">
               {error}
             </div>
           )}
 
           {success && (
-            <div className="bg-green-50 border border-green-200 rounded-md p-3">
-              <div className="text-green-800 text-sm font-medium mb-1">
-                {success}
+            <div className="bg-[#ecfdf5] border border-[#a7f3d0] rounded-lg p-4">
+              <div className="text-[13px] font-semibold text-[#059669]">
+                Class created successfully!
               </div>
-              <div className="text-green-600 text-xs">
-                Copy this code: <span className="font-mono font-bold">{classCode}</span>
+              <div className="text-[11px] text-[#059669] mt-1">
+                Class code:
+              </div>
+              <div className="font-mono font-bold text-[#059669] text-[15px] bg-white border border-[#a7f3d0] px-3 py-1.5 rounded-lg inline-block mt-2 tracking-widest">
+                {classCode}
               </div>
             </div>
           )}
 
-          <div className="flex justify-end space-x-3">
+          <div className="flex justify-end gap-2 pt-2">
             <button
               type="button"
               onClick={handleClose}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+              className="px-4 py-2 text-[13px] font-medium text-[#52525e] bg-white border border-[#d1d1db] rounded-lg hover:bg-[#f8f8fb] transition-all"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading || success !== ''}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+              className="px-4 py-2 text-[13px] font-medium text-white bg-[#4f6ef7] hover:bg-[#3d5ce8] rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Creating...' : success ? 'Created!' : 'Create Class'}
             </button>

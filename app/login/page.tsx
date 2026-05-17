@@ -92,76 +92,109 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to your account
-          </h2>
+    <div className="min-h-screen flex items-center justify-center bg-[#f4f4f6] font-sans">
+      <div className="max-w-md w-full px-6 py-12">
+        {/* LOGO / BRANDING */}
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-[#111116] text-white rounded-2xl shadow-xl shadow-black/10 mb-6">
+            <i className="ti ti-hexagon-filled text-3xl"></i>
+          </div>
+          <h1 className="text-[28px] font-black text-[#111116] tracking-tight mb-2">MentorOS</h1>
+          <p className="text-[14px] text-[#9090a0] font-medium uppercase tracking-widest">Intelligent Academic Mentoring</p>
         </div>
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-            {error}
-          </div>
-        )}
-        
-        {message && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
-            {message}
-          </div>
-        )}
 
-        <form className="mt-8 space-y-6" onSubmit={handleLogin}>
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
+        {/* LOGIN CARD */}
+        <div className="bg-white border border-[#e4e4e9] rounded-[24px] shadow-2xl shadow-[#111116]/5 overflow-hidden">
+          <div className="p-8 pb-4">
+            <h2 className="text-[18px] font-bold text-[#111116]">Welcome back</h2>
+            <p className="text-[13px] text-[#9090a0] mt-1">Sign in to access your dashboard</p>
           </div>
 
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Signing in...' : 'Sign in'}
-            </button>
-          </div>
+          <div className="px-8 pb-8 space-y-6">
+            {error && (
+              <div className="bg-red-50 border border-red-100 text-red-600 text-[13px] font-bold px-4 py-3 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+                <i className="ti ti-alert-circle text-lg"></i>
+                {error}
+              </div>
+            )}
+            
+            {message && (
+              <div className="bg-green-50 border border-green-100 text-green-600 text-[13px] font-bold px-4 py-3 rounded-xl flex items-center gap-3">
+                <i className="ti ti-circle-check text-lg"></i>
+                {message}
+              </div>
+            )}
 
-          <div className="text-center">
-            <button
-              type="button"
-              onClick={handleForgotPassword}
-              disabled={loading}
-              className="text-sm text-indigo-600 hover:text-indigo-500 disabled:opacity-50"
-            >
-              Forgot password?
-            </button>
+            <form className="space-y-5" onSubmit={handleLogin}>
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-black text-[#9090a0] uppercase tracking-widest ml-1">Email Address</label>
+                  <div className="relative group">
+                    <i className="ti ti-mail absolute left-4 top-1/2 -translate-y-1/2 text-[#9090a0] group-focus-within:text-[#4f6ef7] transition-colors"></i>
+                    <input
+                      id="email"
+                      name="email"
+                      type="email"
+                      autoComplete="email"
+                      required
+                      className="w-full pl-11 pr-4 py-3.5 bg-[#fcfcfd] border border-[#e4e4e9] rounded-xl text-[14px] text-[#111116] focus:border-[#4f6ef7] focus:ring-4 focus:ring-[#4f6ef7]/5 outline-none transition-all placeholder:text-[#d1d1db]"
+                      placeholder="name@university.edu"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex justify-between items-center ml-1">
+                    <label className="text-[11px] font-black text-[#9090a0] uppercase tracking-widest">Password</label>
+                    <button
+                      type="button"
+                      onClick={handleForgotPassword}
+                      className="text-[11px] font-black text-[#4f6ef7] uppercase tracking-widest hover:underline"
+                    >
+                      Forgot?
+                    </button>
+                  </div>
+                  <div className="relative group">
+                    <i className="ti ti-lock absolute left-4 top-1/2 -translate-y-1/2 text-[#9090a0] group-focus-within:text-[#4f6ef7] transition-colors"></i>
+                    <input
+                      id="password"
+                      name="password"
+                      type="password"
+                      autoComplete="current-password"
+                      required
+                      className="w-full pl-11 pr-4 py-3.5 bg-[#fcfcfd] border border-[#e4e4e9] rounded-xl text-[14px] text-[#111116] focus:border-[#4f6ef7] focus:ring-4 focus:ring-[#4f6ef7]/5 outline-none transition-all placeholder:text-[#d1d1db]"
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-4 bg-[#111116] text-white text-[15px] font-black rounded-xl shadow-xl shadow-black/10 hover:bg-black transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                    Authenticating...
+                  </>
+                ) : (
+                  <>Sign in to MentorOS <i className="ti ti-arrow-right"></i></>
+                )}
+              </button>
+            </form>
           </div>
-        </form>
+        </div>
+
+        {/* FOOTER */}
+        <p className="mt-8 text-center text-[12px] text-[#9090a0] font-medium">
+          New here? Contact your administrator for account access.
+        </p>
       </div>
     </div>
   )

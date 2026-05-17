@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+export const maxDuration = 120;
+
 export async function POST(request: NextRequest) {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000);
+  const timeoutId = setTimeout(() => controller.abort(), 120000);
 
   try {
     const body = await request.json();
@@ -55,7 +57,7 @@ Generate 6-10 questions total. Be specific using actual student data, not generi
       }),
       signal: controller.signal
     }).catch(err => {
-      if (err.name === 'AbortError') throw new Error('Ollama request timed out (30s)');
+      if (err.name === 'AbortError') throw new Error('Ollama request timed out (120s)');
       throw new Error('Failed to connect to Ollama. Ensure it is running on port 11434.');
     });
 

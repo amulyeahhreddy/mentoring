@@ -7,7 +7,7 @@ interface ReviewModeProps {
   selectedStudent: any
   mentorId: string
   activeSessionId: string
-  onBack: () => void
+  onBack: (savedOutput?: any) => void
   onSubmitComplete: () => void
 }
 
@@ -91,6 +91,22 @@ export default function ReviewMode({
         if (tasksError) console.error('Tasks upsert error:', tasksError)
       }
 
+      // 3. Create pre_session_insights for NEXT session
+      const carryForward = editedOutput?.carry_forward_questions || []
+      const suggestedNext = (editedOutput?.suggested_questions || []).map((q: any) => ({ ...q, checked: false }))
+
+      if (carryForward.length > 0 || suggestedNext.length > 0) {
+        await supabase.from('pre_session_insights').insert({
+          student_id: selectedStudent.id,
+          mentor_id: mentorId,
+          insights: {
+            questions: [...carryForward, ...suggestedNext]
+          },
+          model_used: 'ollama',
+          generated_at: new Date().toISOString()
+        })
+      }
+
       setSubmitting(false)
       triggerToast('Session submitted successfully')
       setTimeout(() => onSubmitComplete(), 1500)
@@ -101,181 +117,335 @@ export default function ReviewMode({
     }
   }
 
+  const handleBack = async () => {
+    if (editedOutput) {
+      await supabase
+        .from('sessions')
+        .update({ ai_output: editedOutput })
+        .eq('id', activeSessionId)
+      onBack(editedOutput)
+    } else {
+      onBack()
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-3">
-        <div className="animate-spin w-6 h-6 border-2 border-gray-300 border-t-purple-600 rounded-full"></div>
-        <p className="text-gray-500 text-sm">Preparing review...</p>
+        <div className="animate-spin w-6 h-6 border-2 border-[rgba(255,255,255,0.10)] border-t-purple-600 rounded-full"></div>
+        <p className="text-[#8b8b9e] text-sm">Preparing review...</p>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col h-full bg-gray-50 relative overflow-hidden">
-      <div className="flex-1 overflow-y-auto p-6 pb-24">
-        <div className="max-w-4xl mx-auto space-y-6">
+    <div className="flex flex-col h-full bg-[#f4f4f6] text-[#111116] font-sans overflow-hidden">
+      <div className="flex-1 overflow-y-auto p-8 pb-24">
+        <div className="max-w-4xl mx-auto space-y-8">
           
-          {/* SECTION 1: STUDENT PROFILE */}
-          <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] uppercase text-gray-500 tracking-wider">Student profile</span>
-              <button onClick={() => setProfileCollapsed(!profileCollapsed)}>
-                <i className={`ti ti-chevron-${profileCollapsed ? 'down' : 'up'} text-gray-400`}></i>
-              </button>
+          {/* HEADER SECTION */}
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <h2 className="text-[22px] font-black text-[#111116] tracking-tight">Session Finalization</h2>
+              <p className="text-[13px] text-[#9090a0]">Review and verify all recorded data before final submission.</p>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 font-bold">
-                {selectedStudent.name?.charAt(0)}
-              </div>
-              <div>
-                <div className="text-[14px] font-bold text-gray-800">{selectedStudent.name}</div>
-                <div className="text-[12px] text-gray-500">{selectedStudent.email}</div>
-              </div>
+            <div className="flex items-center gap-3">
+              <span className="bg-[#ecfdf5] text-[#059669] text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider">
+                Ready to Archive
+              </span>
             </div>
-            {!profileCollapsed && (
-              <div className="mt-4 pt-4 border-t border-gray-100 grid grid-cols-2 gap-4 animate-in fade-in">
-                <div>
-                  <div className="text-[11px] text-gray-400">Year / Branch</div>
-                  <div className="text-[13px] text-gray-700">{selectedStudent.year} Year, {selectedStudent.branch}</div>
+          </div>
+
+          {/* SECTION 1: STUDENT PROFILE CARD */}
+          <div className="bg-white border border-[#e4e4e9] rounded-2xl shadow-sm overflow-hidden transition-all">
+            <div 
+              className="p-6 border-b border-[#f4f4f6] flex items-center justify-between bg-[#fcfcfd] cursor-pointer group"
+              onClick={() => setProfileCollapsed(!profileCollapsed)}
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#4f6ef7] to-[#7c3aed] flex items-center justify-center text-white text-lg font-black shadow-lg shadow-[#4f6ef7]/20">
+                  {selectedStudent.name?.charAt(0)}
                 </div>
-                {profileData && Object.entries(profileData).map(([key, val]) => {
-                  if (['id', 'student_id', 'created_at'].includes(key) || !val) return null
-                  return (
-                    <div key={key}>
-                      <div className="text-[11px] text-gray-400 capitalize">{key.replace(/_/g, ' ')}</div>
-                      <div className="text-[13px] text-gray-700">{String(val)}</div>
-                    </div>
-                  )
-                })}
+                <div>
+                  <h3 className="text-[15px] font-black text-[#111116] leading-tight">{selectedStudent.name}</h3>
+                  <p className="text-[12px] text-[#9090a0] font-medium">{selectedStudent.email}</p>
+                </div>
               </div>
-            )}
-          </div>
-
-          {/* SECTION 2: SESSION NOTES */}
-          <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] uppercase text-gray-500 tracking-wider">Session notes</span>
-              <button onClick={() => setNotesCollapsed(!notesCollapsed)}>
-                <i className={`ti ti-chevron-${notesCollapsed ? 'down' : 'up'} text-gray-400`}></i>
-              </button>
+              <div className="flex items-center gap-3">
+                <span className="text-[10px] font-black text-[#9090a0] uppercase tracking-widest group-hover:text-[#4f6ef7] transition-colors">
+                  {profileCollapsed ? 'Show Profile' : 'Hide Profile'}
+                </span>
+                <i className={`ti ti-chevron-${profileCollapsed ? 'down' : 'up'} text-[#9090a0] group-hover:text-[#4f6ef7] transition-all`}></i>
+              </div>
             </div>
-            {(!session?.structured_input) ? (
-              <p className="text-[13px] text-gray-400 italic">No session notes recorded</p>
-            ) : (
-              <div className="text-[13px] text-gray-700">
-                Summary available in expanded view
-              </div>
-            )}
-            {!notesCollapsed && session?.structured_input && (
-              <div className="mt-4 pt-4 border-t border-gray-100 space-y-4 animate-in fade-in">
-                {/* Simplified view of structured input */}
-                {session.structured_input.student && (
-                  <div>
-                    <div className="text-[11px] font-bold text-gray-400 mb-2 uppercase">Student Input</div>
-                    <div className="space-y-2">
-                      {session.structured_input.student.course_ratings?.map((c: any, i: number) => (
-                        <div key={i} className="flex justify-between text-[12px] bg-gray-50 p-2 rounded">
-                          <span>{c.name}</span>
-                          <span className="font-medium text-amber-600">{'★'.repeat(c.rating || 0)}</span>
-                        </div>
-                      ))}
-                    </div>
+
+            {!profileCollapsed && (
+              <div className="p-8 animate-in slide-in-from-top-4 duration-300">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-[#9090a0] uppercase tracking-widest">Academic Context</label>
+                    <p className="text-[14px] font-bold text-[#111116]">{selectedStudent.year} Year &middot; {selectedStudent.branch}</p>
                   </div>
-                )}
-                {session.structured_input.mentor && (
-                  <div>
-                    <div className="text-[11px] font-bold text-gray-400 mb-2 uppercase">Mentor Observations</div>
-                    <div className="text-[13px] whitespace-pre-wrap text-gray-700 bg-gray-50 p-3 rounded-lg border border-gray-100">
-                      {session.structured_input.mentor.mentor_observation || 'No observations written.'}
-                    </div>
-                  </div>
-                )}
+                  {profileData && Object.entries(profileData).map(([key, val]) => {
+                    if (['id', 'student_id', 'created_at'].includes(key) || !val) return null
+                    return (
+                      <div key={key} className="space-y-1">
+                        <label className="text-[10px] font-black text-[#9090a0] uppercase tracking-widest capitalize">{key.replace(/_/g, ' ')}</label>
+                        <p className="text-[14px] font-bold text-[#111116]">{String(val)}</p>
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             )}
           </div>
 
-          {/* SECTION 3: FINAL INSIGHTS REVIEW */}
-          <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-            <div className="mb-4">
-              <div className="text-[11px] uppercase text-gray-500 tracking-wider mb-1">Session insights</div>
-              <div className="text-[13px] font-medium text-gray-800">Final review before submitting</div>
-              <div className="text-[11px] text-gray-400">Last chance to edit before submission</div>
+          {/* SECTION 2: SESSION SUMMARY REPORT */}
+          <div className="bg-white border border-[#e4e4e9] rounded-2xl shadow-sm overflow-hidden">
+            <div 
+              className="p-6 border-b border-[#f4f4f6] flex items-center justify-between bg-[#fcfcfd] cursor-pointer group"
+              onClick={() => setNotesCollapsed(!notesCollapsed)}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-[#f4f4f6] flex items-center justify-center text-[#111116]">
+                  <i className="ti ti-file-description text-lg"></i>
+                </div>
+                <div>
+                  <h4 className="text-[13px] font-black text-[#111116] uppercase tracking-widest">Session Summary Report</h4>
+                  {!session?.structured_input ? (
+                    <p className="text-[11px] text-[#ef4444] font-bold uppercase tracking-wider">No Data Recorded</p>
+                  ) : (
+                    <p className="text-[11px] text-[#9090a0] font-bold uppercase tracking-wider">
+                      {Object.keys(session.structured_input.student || {}).length + Object.keys(session.structured_input.mentor || {}).length} SECTIONS ARCHIVED
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-[10px] font-black text-[#9090a0] uppercase tracking-widest group-hover:text-[#4f6ef7] transition-colors">
+                  {notesCollapsed ? 'Review Full Report' : 'Collapse Report'}
+                </span>
+                <i className={`ti ti-chevron-${notesCollapsed ? 'down' : 'up'} text-[#9090a0] group-hover:text-[#4f6ef7] transition-all`}></i>
+              </div>
+            </div>
+
+            {!notesCollapsed && session?.structured_input && (() => {
+              const st = session.structured_input.student || {}
+              const me = session.structured_input.mentor || {}
+              const renderBool = (val: any) => {
+                if (val === true) return <span className="bg-[#ecfdf5] text-[#059669] px-2 py-0.5 rounded-md font-black">YES</span>
+                if (val === false) return <span className="bg-[#fef2f2] text-[#ef4444] px-2 py-0.5 rounded-md font-black">NO</span>
+                return <span className="text-[#9090a0]">—</span>
+              }
+              
+              const sectionHeader = (title: string, icon: string) => (
+                <div className="flex items-center gap-2 mb-6 mt-10 first:mt-0 border-b border-[#f4f4f6] pb-3">
+                  <i className={`ti ${icon} text-[#4f6ef7] text-lg`}></i>
+                  <h5 className="text-[12px] font-black text-[#111116] uppercase tracking-[0.15em]">{title}</h5>
+                </div>
+              )
+
+              return (
+                <div className="p-8 space-y-4 animate-in slide-in-from-top-4 duration-500">
+                  
+                  {/* Attendance & Discipline */}
+                  {me.attendance && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        {sectionHeader('Attendance Status', 'ti-calendar-check')}
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center bg-[#fcfcfd] p-3 rounded-xl border border-[#f4f4f6]">
+                            <span className="text-[13px] font-bold text-[#52525e]">Above 90% Threshold</span>
+                            <span className="text-[11px]">{renderBool(me.attendance.is_above_90)}</span>
+                          </div>
+                          <div className="flex justify-between items-center bg-[#fcfcfd] p-3 rounded-xl border border-[#f4f4f6]">
+                            <span className="text-[13px] font-bold text-[#52525e]">Indiscipline Flags</span>
+                            <span className="text-[11px]">{renderBool(me.indiscipline?.has_indiscipline)}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {me.attendance.fortnightly_records?.length > 0 && (
+                        <div className="space-y-4">
+                          {sectionHeader('Periodic Records', 'ti-list-check')}
+                          <div className="overflow-hidden border border-[#f4f4f6] rounded-xl">
+                            <table className="w-full text-[12px]">
+                              <thead className="bg-[#fcfcfd] text-[#9090a0] border-b border-[#f4f4f6]">
+                                <tr>
+                                  <th className="p-2.5 text-left font-black uppercase tracking-wider">Prd</th>
+                                  <th className="p-2.5 text-left font-black uppercase tracking-wider">%</th>
+                                  <th className="p-2.5 text-left font-black uppercase tracking-wider">Change</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-[#f4f4f6]">
+                                {me.attendance.fortnightly_records.slice(0, 3).map((r: any, i: number) => (
+                                  <tr key={i} className="hover:bg-[#fcfcfd]">
+                                    <td className="p-2.5 font-bold text-[#111116]">{r.number || i + 1}</td>
+                                    <td className="p-2.5 font-bold text-[#4f6ef7]">{r.percentage}%</td>
+                                    <td className="p-2.5 font-bold text-[#10b981]">{r.change || '—'}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Course Ratings & Academics */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    {st.course_ratings?.filter((c: any) => c.name).length > 0 && (
+                      <div>
+                        {sectionHeader('Course Feedback', 'ti-book')}
+                        <div className="space-y-2">
+                          {st.course_ratings.filter((c: any) => c.name).map((c: any, i: number) => (
+                            <div key={i} className="flex items-center justify-between p-3 bg-[#fcfcfd] rounded-xl border border-[#f4f4f6]">
+                              <div>
+                                <div className="text-[13px] font-black text-[#111116] leading-tight">{c.name}</div>
+                                {c.has_difficulty && <span className="text-[10px] text-[#ef4444] font-black uppercase tracking-widest mt-1 inline-block">Learning Gap Detected</span>}
+                              </div>
+                              <div className="flex gap-0.5">
+                                {[...Array(5)].map((_, idx) => (
+                                  <i key={idx} className={`ti ti-star-filled text-[14px] ${idx < (c.rating || 0) ? 'text-amber-400' : 'text-[#f4f4f6]'}`}></i>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {st.study_habits && (
+                      <div>
+                        {sectionHeader('Daily Commitment', 'ti-clock')}
+                        <div className="grid grid-cols-2 gap-3">
+                          {[
+                            { label: 'Self Study', val: `${st.study_habits.hours}h`, icon: 'ti-book-2' },
+                            { label: 'Vocabulary', val: `${st.study_habits.vocabulary}m`, icon: 'ti-language' },
+                            { label: 'Reading', val: `${st.study_habits.reading}m`, icon: 'ti-vocabulary' },
+                            { label: 'Logic/QA', val: `${st.study_habits.reasoning}m`, icon: 'ti-brain' }
+                          ].map((h, i) => (
+                            <div key={i} className="p-3 bg-[#fcfcfd] rounded-xl border border-[#f4f4f6] flex flex-col gap-1">
+                              <span className="text-[10px] font-black text-[#9090a0] uppercase tracking-wider">{h.label}</span>
+                              <span className="text-[15px] font-black text-[#4f6ef7]">{h.val}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Mentor Observations */}
+                  {(me.mentor_observation || me.mentor_recommendation) && (
+                    <div className="space-y-6">
+                      {sectionHeader('Clinical Observations', 'ti-notes')}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {me.mentor_observation && (
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-black text-[#9090a0] uppercase tracking-widest">Primary Observation</label>
+                            <div className="text-[13px] text-[#52525e] bg-[#fcfcfd] p-4 rounded-2xl border border-[#f4f4f6] leading-relaxed italic">
+                              "{me.mentor_observation}"
+                            </div>
+                          </div>
+                        )}
+                        {me.mentor_recommendation && (
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-black text-[#059669] uppercase tracking-widest">Formal Recommendation</label>
+                            <div className="text-[13px] text-[#111116] bg-[#ecfdf5]/50 p-4 rounded-2xl border border-[#059669]/10 leading-relaxed font-bold">
+                              {me.mentor_recommendation}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Signatures */}
+                  {me.signatures && (
+                    <div className="mt-12 pt-10 border-t border-[#f4f4f6]">
+                      <div className="grid grid-cols-3 gap-8">
+                        {['mentee', 'mentor', 'coordinator'].map(role => (
+                          <div key={role} className="space-y-3 text-center">
+                            <div className="h-10 flex items-end justify-center">
+                              {me.signatures[role]?.signed ? (
+                                <span className="font-serif italic text-lg text-[#111116]/40">{me.signatures[role]?.signed_by || role}</span>
+                              ) : (
+                                <div className="w-full border-b border-dashed border-[#e4e4e9]"></div>
+                              )}
+                            </div>
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-[10px] font-black text-[#111116] uppercase tracking-[0.2em]">{role}</span>
+                              <span className="text-[9px] text-[#9090a0] font-black uppercase tracking-wider">
+                                {me.signatures[role]?.date || 'Awaiting Digital Stamp'}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
+          </div>
+
+          {/* SECTION 3: AI INSIGHTS & ACTION ITEMS */}
+          <div className="bg-white border border-[#e4e4e9] rounded-2xl shadow-sm overflow-hidden">
+            <div className="p-6 border-b border-[#f4f4f6] bg-[#fcfcfd]">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-[#eef1fe] flex items-center justify-center text-[#4f6ef7]">
+                  <i className="ti ti-sparkles text-lg"></i>
+                </div>
+                <div>
+                  <h4 className="text-[13px] font-black text-[#111116] uppercase tracking-widest">Intelligence Verification</h4>
+                  <p className="text-[11px] text-[#9090a0] font-bold uppercase tracking-wider">Validate automated findings before commit</p>
+                </div>
+              </div>
             </div>
 
             {editedOutput && (
-              <div className="space-y-6">
+              <div className="p-8 space-y-10 animate-in slide-in-from-bottom-4 duration-500">
+                
                 {/* Panel: Decisions */}
-                <div className="border-t border-gray-100 pt-4">
-                  <div className="text-[11px] text-gray-400 mb-2">DECISIONS & NARRATIVE</div>
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black text-[#9090a0] uppercase tracking-widest">Session Narrative & Decisions</label>
                   <textarea 
-                    className="w-full text-[13px] border border-gray-200 rounded-lg p-3 resize-none focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    rows={3}
+                    className="w-full text-[14px] bg-[#fcfcfd] border border-[#e4e4e9] rounded-2xl p-5 focus:border-[#4f6ef7] outline-none min-h-[120px] leading-relaxed transition-all font-medium"
                     value={editedOutput.decisions?.narrative || ''}
                     onChange={(e) => setEditedOutput({
                       ...editedOutput,
                       decisions: { ...editedOutput.decisions, narrative: e.target.value }
                     })}
                   />
-                  <div className="mt-3 space-y-2">
-                    {editedOutput.decisions?.commitments?.map((c: any, i: number) => (
-                      <div key={i} className="flex items-center gap-2 text-[12px] bg-gray-50 px-3 py-1.5 rounded border border-gray-100">
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
-                          c.assigned_to === 'student' ? 'bg-gray-200 text-gray-700' : 'bg-blue-100 text-blue-700'
-                        }`}>{c.assigned_to}</span>
-                        <span className="flex-1 truncate">{c.task}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Panel: Emotional & Behavioral */}
-                <div className="border-t border-gray-100 pt-4">
-                  <div className="text-[11px] text-gray-400 mb-2">EMOTIONAL & BEHAVIORAL</div>
-                  <div className="flex gap-2 mb-3">
-                    {[editedOutput.emotional_behavioral?.overall_tone, editedOutput.emotional_behavioral?.engagement_level, editedOutput.emotional_behavioral?.confidence_level].map((v, i) => (
-                      <span key={i} className="bg-gray-100 text-gray-600 text-[11px] px-2 py-0.5 rounded-full">{v}</span>
-                    ))}
-                  </div>
-                  <textarea 
-                    className="w-full text-[13px] border border-gray-200 rounded-lg p-3 resize-none focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    rows={3}
-                    value={editedOutput.emotional_behavioral?.observations || ''}
-                    onChange={(e) => setEditedOutput({
-                      ...editedOutput,
-                      emotional_behavioral: { ...editedOutput.emotional_behavioral, observations: e.target.value }
-                    })}
-                  />
                 </div>
 
                 {/* Panel: Risk Flags */}
-                <div className="border-t border-gray-100 pt-4">
-                  <div className="text-[11px] text-gray-400 mb-2">RISK FLAGS</div>
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black text-[#ef4444] uppercase tracking-widest">Identified Risks & Safety Flags</label>
                   {(!editedOutput.risk_flags || editedOutput.risk_flags.length === 0) ? (
-                    <p className="text-[12px] text-green-600">No flags identified.</p>
+                    <div className="p-4 bg-[#ecfdf5] border border-[#059669]/10 rounded-xl">
+                      <p className="text-[13px] text-[#059669] font-bold">Safe Environment: No behavioral risks detected in session transcript.</p>
+                    </div>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {editedOutput.risk_flags.map((flag: any, i: number) => (
-                        <div key={i} className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-[11px] font-bold bg-red-50 text-red-700 px-1.5 py-0.5 rounded">{flag.severity}</span>
-                            <span className="text-[13px] font-medium">{flag.flag_code}</span>
+                        <div key={i} className="p-5 bg-[#fef2f2] border border-[#fca5a5]/30 rounded-2xl space-y-3 relative overflow-hidden group">
+                          <div className="flex items-center gap-3">
+                            <span className={`text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider ${
+                              flag.severity === 'critical' ? 'bg-red-600 text-white' : 'bg-red-100 text-red-600'
+                            }`}>
+                              {flag.severity}
+                            </span>
+                            <span className="text-[13px] font-black text-[#111116]">{flag.flag_code}</span>
                           </div>
                           <textarea 
-                            className="w-full text-[12px] border border-gray-200 rounded p-2 focus:outline-none"
+                            className="w-full text-[12px] bg-white/50 border border-red-200 rounded-xl p-3 focus:border-red-400 outline-none leading-relaxed transition-all font-medium"
+                            rows={2}
                             value={flag.description}
                             onChange={(e) => {
                               const flags = [...editedOutput.risk_flags]
-                              flags[i].description = e.target.value
-                              setEditedOutput({ ...editedOutput, risk_flags: flags })
-                            }}
-                          />
-                          <input 
-                            type="text"
-                            className="w-full text-[12px] border border-gray-200 rounded px-2 py-1 focus:outline-none"
-                            value={flag.recommended_action}
-                            onChange={(e) => {
-                              const flags = [...editedOutput.risk_flags]
-                              flags[i].recommended_action = e.target.value
+                              flags[i] = { ...flags[i], description: e.target.value }
                               setEditedOutput({ ...editedOutput, risk_flags: flags })
                             }}
                           />
@@ -285,64 +455,66 @@ export default function ReviewMode({
                   )}
                 </div>
 
-                {/* Panel: Action Items */}
-                <div className="border-t border-gray-100 pt-4">
-                  <div className="text-[11px] text-gray-400 mb-2">ACTION ITEMS</div>
-                  <table className="w-full text-[12px]">
-                    <thead className="text-gray-400 border-b border-gray-100">
-                      <tr>
-                        <th className="text-left font-normal pb-2">Task</th>
-                        <th className="text-left font-normal pb-2">By</th>
-                        <th className="text-left font-normal pb-2">Due</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-50">
-                      {editedOutput.tasks_assigned?.map((t: any, i: number) => (
-                        <tr key={i}>
-                          <td className="py-2 pr-2">
-                            <input 
-                              type="text"
-                              className="w-full border-b border-transparent focus:border-blue-500 outline-none"
-                              value={t.task}
-                              onChange={(e) => {
-                                const tasks = [...editedOutput.tasks_assigned]
-                                tasks[i].task = e.target.value
-                                setEditedOutput({ ...editedOutput, tasks_assigned: tasks })
-                              }}
-                            />
-                          </td>
-                          <td className="py-2 pr-2">
-                            <select 
-                              className="bg-transparent focus:outline-none"
-                              value={t.assigned_to}
-                              onChange={(e) => {
-                                const tasks = [...editedOutput.tasks_assigned]
-                                tasks[i].assigned_to = e.target.value
-                                setEditedOutput({ ...editedOutput, tasks_assigned: tasks })
-                              }}
-                            >
-                              <option value="student">Student</option>
-                              <option value="mentor">Mentor</option>
-                              <option value="both">Both</option>
-                            </select>
-                          </td>
-                          <td className="py-2">
-                            <input 
-                              type="text"
-                              className="w-full bg-transparent focus:outline-none"
-                              value={t.due_by}
-                              onChange={(e) => {
-                                const tasks = [...editedOutput.tasks_assigned]
-                                tasks[i].due_by = e.target.value
-                                setEditedOutput({ ...editedOutput, tasks_assigned: tasks })
-                              }}
-                              placeholder="Due date"
-                            />
-                          </td>
+                {/* Panel: Action Items Table */}
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black text-[#4f6ef7] uppercase tracking-widest">Task Matrix & Assignments</label>
+                  <div className="border border-[#f4f4f6] rounded-2xl overflow-hidden">
+                    <table className="w-full text-[13px]">
+                      <thead className="bg-[#fcfcfd] text-[#9090a0] border-b border-[#f4f4f6]">
+                        <tr>
+                          <th className="px-6 py-4 text-left font-black uppercase tracking-wider">Actionable Task</th>
+                          <th className="px-6 py-4 text-left font-black uppercase tracking-wider w-32">Assignee</th>
+                          <th className="px-6 py-4 text-left font-black uppercase tracking-wider w-32">Deadline</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-[#f4f4f6]">
+                        {editedOutput.tasks_assigned?.map((t: any, i: number) => (
+                          <tr key={i} className="hover:bg-[#fcfcfd] transition-colors">
+                            <td className="px-6 py-4">
+                              <input 
+                                type="text"
+                                className="w-full bg-transparent font-bold text-[#111116] focus:text-[#4f6ef7] outline-none"
+                                value={t.task}
+                                onChange={(e) => {
+                                  const tasks = [...editedOutput.tasks_assigned]
+                                  tasks[i] = { ...tasks[i], task: e.target.value }
+                                  setEditedOutput({ ...editedOutput, tasks_assigned: tasks })
+                                }}
+                              />
+                            </td>
+                            <td className="px-6 py-4">
+                              <select 
+                                className="bg-transparent font-black text-[#4f6ef7] uppercase text-[10px] tracking-widest outline-none cursor-pointer"
+                                value={t.assigned_to}
+                                onChange={(e) => {
+                                  const tasks = [...editedOutput.tasks_assigned]
+                                  tasks[i] = { ...tasks[i], assigned_to: e.target.value }
+                                  setEditedOutput({ ...editedOutput, tasks_assigned: tasks })
+                                }}
+                              >
+                                <option value="student">STUDENT</option>
+                                <option value="mentor">MENTOR</option>
+                                <option value="both">JOINT</option>
+                              </select>
+                            </td>
+                            <td className="px-6 py-4">
+                              <input 
+                                type="text"
+                                className="w-full bg-transparent font-medium text-[#9090a0] focus:text-[#111116] outline-none"
+                                value={t.due_by}
+                                onChange={(e) => {
+                                  const tasks = [...editedOutput.tasks_assigned]
+                                  tasks[i] = { ...tasks[i], due_by: e.target.value }
+                                  setEditedOutput({ ...editedOutput, tasks_assigned: tasks })
+                                }}
+                                placeholder="TBD"
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             )}
@@ -350,35 +522,42 @@ export default function ReviewMode({
         </div>
       </div>
 
-      {/* STICKY BOTTOM BAR */}
-      <div 
-        className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 px-6 flex items-center justify-between shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-40"
-        style={{ backgroundColor: 'var(--color-background-primary)', borderTop: '0.5px solid var(--color-border-tertiary)' }}
-      >
-        <div className="text-[12px] text-gray-400">
-          Submitting will finalise this session
-        </div>
-        <div className="flex gap-3">
-          <button 
-            onClick={onBack}
-            className="bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg px-5 py-2.5 text-sm font-medium transition-colors"
-          >
-            Back
-          </button>
+      {/* STICKY BOTTOM ACTIONS */}
+      <div className="bg-white border-t border-[#e4e4e9] px-8 py-4 flex items-center justify-between shadow-[0_-4px_12px_rgba(0,0,0,0.03)] shrink-0 z-40">
+        <button 
+          onClick={handleBack}
+          className="text-[13px] font-bold text-[#52525e] hover:bg-[#f4f4f6] px-5 py-2.5 rounded-xl transition-all flex items-center gap-2"
+        >
+          <i className="ti ti-arrow-left"></i> Save & Exit
+        </button>
+        <div className="flex items-center gap-4">
           <button 
             onClick={handleSubmit}
             disabled={submitting}
-            className="bg-green-600 hover:bg-green-700 text-white rounded-lg px-5 py-2.5 text-sm font-medium transition-colors shadow-sm disabled:opacity-50"
+            className={`px-10 py-3 text-[14px] font-black rounded-xl shadow-lg transition-all flex items-center gap-3 ${
+              submitting 
+                ? 'bg-[#f4f4f6] text-[#9090a0] cursor-not-allowed' 
+                : 'bg-gradient-to-r from-[#10b981] to-[#059669] text-white hover:shadow-xl hover:shadow-[#10b981]/20 active:scale-[0.98]'
+            }`}
           >
-            {submitting ? 'Submitting...' : 'Submit session'}
+            {submitting ? (
+              <>
+                <div className="w-4 h-4 border-2 border-[#9090a0] border-t-transparent rounded-full animate-spin"></div>
+                Finalizing...
+              </>
+            ) : (
+              <>Archive & Submit Session <i className="ti ti-archive text-lg"></i></>
+            )}
           </button>
         </div>
       </div>
 
-      {/* TOAST */}
       {showToast && (
-        <div className="fixed top-4 right-4 bg-gray-900 text-white px-6 py-3 rounded-xl shadow-2xl z-50 animate-in fade-in slide-in-from-top-4">
-          <span className="text-[14px] font-medium">{toastMessage}</span>
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[60] animate-in slide-in-from-bottom-4">
+          <div className="bg-[#111116] text-white text-[13px] font-bold px-6 py-3 rounded-full shadow-2xl flex items-center gap-3">
+            <i className={`ti ${toastMessage.includes('fail') ? 'ti-alert-circle text-red-400' : 'ti-circle-check text-green-400'}`}></i>
+            {toastMessage}
+          </div>
         </div>
       )}
     </div>

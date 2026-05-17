@@ -15,9 +15,10 @@ export default function SignOutButton() {
   return (
     <button
       onClick={handleSignOut}
-      className="w-full px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+      className="w-full flex items-center gap-3 px-3 py-2.5 bg-transparent hover:bg-white/5 rounded-lg transition-all text-[#52525e] hover:text-[#e8e8f0] group"
     >
-      Logout
+      <i className="ti ti-logout text-[16px]"></i>
+      <span className="text-[13px] font-medium">Sign out</span>
     </button>
   )
 }

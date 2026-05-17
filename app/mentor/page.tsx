@@ -67,6 +67,7 @@ export default function MentorPage() {
       
       if (data.success && data.session_id) {
         setActiveSessionId(data.session_id)
+        setAiOutput(null)
         setMode('session')
       } else {
         console.error('Failed to create session via API:', data.error)
@@ -77,7 +78,7 @@ export default function MentorPage() {
   }, [selectedStudent, mentorId])
 
   return (
-    <div className="flex h-screen bg-gray-950 text-white overflow-hidden">
+    <div className="flex h-screen bg-[#f4f4f6] text-[#111116] overflow-hidden font-sans">
       <StudentList
         students={students}
         selectedStudent={selectedStudent}
@@ -91,23 +92,52 @@ export default function MentorPage() {
         }}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-3 bg-gray-950 border-b border-gray-800 shrink-0">
-          <span className="font-semibold">{mentorName || 'Mentor'}</span>
-          <div className="flex gap-1 text-sm">
-            {(['briefing','session','validate','review'] as const).map(m => (
-              <span key={m} className={`px-3 py-1 rounded capitalize ${mode === m ? 'bg-blue-600 text-white' : 'text-gray-500'}`}>
-                {m}
-              </span>
-            ))}
+        <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-[#e4e4e9] shrink-0 transition-all duration-150 ease-out">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-[2px] bg-[#4f6ef7]" />
+            <span className="text-[14px] font-semibold text-[#111116]">MentorOS</span>
           </div>
-          <button onClick={handleLogout} className="text-sm bg-red-600 hover:bg-red-700 px-3 py-1 rounded">
-            Logout
-          </button>
+          <div className="flex items-center gap-1">
+            {(['briefing', 'session', 'validate', 'review'] as const).map((m, idx, arr) => {
+              const activeIdx = arr.indexOf(mode)
+              const isCompleted = idx < activeIdx
+              const isActive = mode === m
+              return (
+                <div key={m} className="flex items-center">
+                  <div className="flex items-center gap-2 px-2">
+                    <div className={`w-2 h-2 rounded-full transition-all duration-300 ${isActive ? 'bg-[#4f6ef7] ring-4 ring-[#4f6ef7]/15' : isCompleted ? 'bg-[#059669]' : 'border border-[#d1d1db] bg-white'}`} />
+                    <span className={`text-[11px] font-medium capitalize tracking-wide transition-colors ${isActive ? 'text-[#4f6ef7]' : isCompleted ? 'text-[#9090a0] line-through' : 'text-[#9090a0]'}`}>
+                      {m}
+                    </span>
+                  </div>
+                  {idx < arr.length - 1 && <div className="w-8 h-[1px] bg-[#e4e4e9]" />}
+                </div>
+              )
+            })}
+          </div>
+          <div className="flex items-center gap-4">
+            <span className="text-[13px] text-[#52525e]">{mentorName || 'Mentor'}</span>
+            <div className="w-[1px] h-4 bg-[#e4e4e9]" />
+            <button 
+              onClick={handleLogout} 
+              className="text-[13px] text-[#52525e] hover:bg-[#f4f4f6] px-3 py-1.5 rounded-lg transition-all"
+            >
+              Sign out
+            </button>
+          </div>
         </div>
         <div className="flex-1 overflow-hidden">
           {!selectedStudent ? (
             <div className="flex items-center justify-center h-full">
-              <p className="text-gray-500 text-xl">Select a student to get started</p>
+              <div className="flex flex-col items-center gap-4 text-center max-w-xs">
+                <div className="w-16 h-16 bg-white rounded-2xl shadow-sm border border-[#e4e4e9] flex items-center justify-center text-3xl">
+                  🎓
+                </div>
+                <div>
+                  <h3 className="text-[15px] font-semibold text-[#111116] mb-1">Select a student</h3>
+                  <p className="text-[#9090a0] text-[13px]">Choose a student from the sidebar to begin or resume a mentoring session.</p>
+                </div>
+              </div>
             </div>
           ) : mode === 'briefing' ? (
             <BriefingMode
@@ -141,7 +171,10 @@ export default function MentorPage() {
               selectedStudent={selectedStudent}
               mentorId={mentorId}
               activeSessionId={activeSessionId!}
-              onBack={() => setMode('validate')}
+              onBack={(savedOutput?: any) => {
+                if (savedOutput) setAiOutput(savedOutput)
+                setMode('validate')
+              }}
               onSubmitComplete={async () => {
                 await refreshStudents()
                 setMode('briefing')

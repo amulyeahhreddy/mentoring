@@ -79,9 +79,27 @@ export default function SessionMode({
     fetchSession()
   }, [activeSessionId, supabase])
 
-  // Autosave removed as per requirements
-
-
+  useEffect(() => {
+    if (!activeSessionId) return
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch('/api/session/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            session_id: activeSessionId,
+            structured_input: formData
+          })
+        })
+        if (!res.ok) {
+          console.error('Autosave failed with status:', res.status)
+        }
+      } catch (err) {
+        console.error('Autosave network error:', err)
+      }
+    }, 30000)
+    return () => clearInterval(interval)
+  }, [activeSessionId, formData])
   const saveImmediate = async () => {
     if (!activeSessionId) return
     setSaving(true)
@@ -115,7 +133,7 @@ export default function SessionMode({
 
   if (!activeSessionId) {
     return (
-      <div className="p-8 text-center text-gray-500 font-medium">
+      <div className="p-8 text-center text-[#8b8b9e] font-medium">
         Creating session...
       </div>
     )
@@ -152,475 +170,377 @@ export default function SessionMode({
   }
 
   return (
-    <div className="flex flex-col h-full bg-white relative">
-
-
-      {/* PHASE INDICATOR */}
-      <div className="flex items-center justify-center py-6 border-b border-gray-100 mb-6">
-        <div className={`flex items-center ${phase === 'student' ? 'text-blue-600 font-bold' : 'text-gray-400'}`}>
-          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs mr-2 ${phase === 'student' ? 'bg-blue-600 text-white' : 'border border-gray-300'}`}>1</div>
-          Student section
+    <div className="flex flex-col h-full bg-[#f4f4f6] text-[#111116] font-sans overflow-hidden">
+      {/* PHASE INDICATOR / HEADER */}
+      <div className="bg-white border-b border-[#e4e4e9] px-8 py-4 flex items-center justify-between sticky top-0 z-30 shrink-0">
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold transition-all ${phase === 'student' ? 'bg-[#4f6ef7] text-white' : 'bg-[#eef1fe] text-[#3548c9]'}`}>1</div>
+            <span className={`text-[13px] font-semibold ${phase === 'student' ? 'text-[#111116]' : 'text-[#9090a0]'}`}>Student Section</span>
+          </div>
+          <div className="w-8 h-[1px] bg-[#e4e4e9]" />
+          <div className="flex items-center gap-3">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold transition-all ${phase === 'mentor' ? 'bg-[#7c3aed] text-white' : 'bg-[#f4f4f6] text-[#9090a0]'}`}>2</div>
+            <span className={`text-[13px] font-semibold ${phase === 'mentor' ? 'text-[#111116]' : 'text-[#9090a0]'}`}>Mentor Section</span>
+          </div>
         </div>
-        <div className="mx-4 text-gray-300">→</div>
-        <div className={`flex items-center ${phase === 'mentor' ? 'text-purple-600 font-bold' : 'text-gray-400'}`}>
-          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs mr-2 ${phase === 'mentor' ? 'bg-purple-600 text-white' : 'border border-gray-300'}`}>2</div>
-          Mentor section
+        
+        <div className="flex items-center gap-4">
+          <div className="text-right">
+            <div className="text-[13px] font-bold text-[#111116]">{selectedStudent.name}</div>
+            <div className="text-[11px] text-[#9090a0]">Session {sessionNumber} &middot; {phase === 'student' ? 'Student Entry' : 'Mentor Review'}</div>
+          </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-8 pb-24">
-        {phase === 'student' && (
-          <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {/* Soft blue banner */}
-            <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-8 flex items-center text-blue-800">
-              <svg className="w-5 h-5 mr-3 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              Student section — please hand the device to the student
+      <div className="flex-1 overflow-y-auto py-12 px-6">
+        <div className="max-w-[760px] mx-auto bg-white border border-[#e4e4e9] rounded-2xl shadow-xl overflow-hidden min-h-[1000px] flex flex-col relative">
+          
+          {/* WATERMARK-STYLE HEADER */}
+          <div className="p-8 border-b-2 border-[#f4f4f6] flex justify-between items-end bg-gradient-to-r from-[#4f6ef7]/5 to-transparent">
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.2em] text-[#9090a0] font-bold mb-1">Academic Year 2023-24</div>
+              <h1 className="text-[24px] font-black text-[#111116] tracking-tight">MENTORING DIARY</h1>
             </div>
+            <div className="text-right">
+              <div className="text-[14px] font-bold text-[#111116]">PART A</div>
+              <div className="text-[10px] uppercase text-[#9090a0] font-bold">Student Self-Record</div>
+            </div>
+          </div>
 
-            {/* 1. COURSE RATINGS */}
-            <section className="mb-10">
-              <h3 className="text-xl font-semibold mb-4 text-gray-800">How well do you understand each course?</h3>
-              <div className="space-y-4">
-                {(formData.student.course_ratings || []).map((course: any, idx: number) => (
-                  <div key={idx} className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <input 
-                        type="text" 
-                        placeholder="Course name" 
-                        className="p-2.5 bg-gray-50 border border-gray-200 rounded-lg w-full focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                        value={course.name || ''}
-                        onChange={(e) => updateStudentArray('course_ratings', idx, 'name', e.target.value)}
-                      />
-                      <div className="flex items-center space-x-1">
-                        {[1,2,3,4,5].map(star => (
-                          <button 
-                            key={star}
-                            onClick={() => updateStudentArray('course_ratings', idx, 'rating', star)}
-                            className={`text-2xl transition-colors ${course.rating >= star ? 'text-amber-400' : 'text-gray-300 hover:text-gray-400'}`}
-                          >
-                            ★
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-4 mb-4">
-                      <span className="text-gray-700 font-medium">Any difficulty?</span>
-                      <div className="flex bg-gray-100 rounded-lg p-1">
-                        <button 
-                          className={`px-4 py-1.5 text-sm rounded-md transition-all ${course.has_difficulty === true ? 'bg-white shadow text-blue-600 font-medium' : 'text-gray-500'}`}
-                          onClick={() => updateStudentArray('course_ratings', idx, 'has_difficulty', true)}
-                        >Yes</button>
-                        <button 
-                          className={`px-4 py-1.5 text-sm rounded-md transition-all ${course.has_difficulty === false ? 'bg-white shadow text-blue-600 font-medium' : 'text-gray-500'}`}
-                          onClick={() => updateStudentArray('course_ratings', idx, 'has_difficulty', false)}
-                        >No</button>
-                      </div>
-                    </div>
+          <div className="p-10 space-y-12 flex-1">
+            {phase === 'student' ? (
+              <>
+                {/* 1. COURSE RATINGS */}
+                <section className="space-y-6">
+                  <div className="flex items-center gap-3 border-b border-[#f4f4f6] pb-3">
+                    <span className="text-[11px] font-black text-[#4f6ef7] uppercase tracking-wider">SEC I</span>
+                    <h4 className="text-[13px] font-bold uppercase tracking-widest text-[#111116]">Course Understanding</h4>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    {(formData.student.course_ratings || []).map((course: any, idx: number) => (
+                      <div key={idx} className="p-5 bg-[#fcfcfd] border border-[#e4e4e9] rounded-xl space-y-4 group transition-all hover:border-[#4f6ef7]/30 hover:shadow-sm">
+                        <div className="flex gap-4">
+                          <input 
+                            type="text" 
+                            placeholder="Course Name (e.g. Data Structures)" 
+                            className="flex-1 bg-white border border-[#e4e4e9] rounded-lg px-4 py-2 text-[13px] focus:border-[#4f6ef7] outline-none transition-all"
+                            value={course.name || ''}
+                            onChange={(e) => updateStudentArray('course_ratings', idx, 'name', e.target.value)}
+                          />
+                          <div className="flex items-center px-3 bg-white border border-[#e4e4e9] rounded-lg">
+                            {[1,2,3,4,5].map(star => (
+                              <button 
+                                key={star}
+                                onClick={() => updateStudentArray('course_ratings', idx, 'rating', star)}
+                                className={`text-xl transition-all ${course.rating >= star ? 'text-[#f59e0b] scale-110' : 'text-[#d1d1db] hover:text-[#9090a0]'}`}
+                              >★</button>
+                            ))}
+                          </div>
+                        </div>
 
-                    {course.has_difficulty && (
-                      <div className="bg-red-50/50 p-4 rounded-lg border border-red-100 space-y-4 animate-in fade-in">
-                        <textarea 
-                          placeholder="Reason?" 
-                          className="w-full p-2.5 bg-white border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-red-200"
-                          value={course.reason || ''}
-                          onChange={(e) => updateStudentArray('course_ratings', idx, 'reason', e.target.value)}
-                        />
-                        <div className="flex items-center space-x-4">
-                          <span className="text-gray-700 text-sm">Did you inform teacher?</span>
-                          <div className="flex space-x-2">
-                            <button 
-                              className={`px-3 py-1 text-sm rounded border ${course.informed_teacher === true ? 'bg-red-500 border-red-500 text-white' : 'bg-white border-gray-200 text-gray-600'}`}
-                              onClick={() => updateStudentArray('course_ratings', idx, 'informed_teacher', true)}
-                            >Yes</button>
-                            <button 
-                              className={`px-3 py-1 text-sm rounded border ${course.informed_teacher === false ? 'bg-red-500 border-red-500 text-white' : 'bg-white border-gray-200 text-gray-600'}`}
-                              onClick={() => updateStudentArray('course_ratings', idx, 'informed_teacher', false)}
-                            >No</button>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <span className="text-[12px] font-medium text-[#52525e]">Difficulty?</span>
+                            <div className="flex bg-[#f4f4f6] rounded-md p-0.5">
+                              <button 
+                                className={`px-3 py-1 text-[11px] font-bold rounded transition-all ${course.has_difficulty === true ? 'bg-white shadow text-[#4f6ef7]' : 'text-[#9090a0]'}`}
+                                onClick={() => updateStudentArray('course_ratings', idx, 'has_difficulty', true)}
+                              >YES</button>
+                              <button 
+                                className={`px-3 py-1 text-[11px] font-bold rounded transition-all ${course.has_difficulty === false ? 'bg-white shadow text-[#4f6ef7]' : 'text-[#9090a0]'}`}
+                                onClick={() => updateStudentArray('course_ratings', idx, 'has_difficulty', false)}
+                              >NO</button>
+                            </div>
+                          </div>
+                        </div>
+
+                        {course.has_difficulty && (
+                          <div className="space-y-4 pt-2 animate-in slide-in-from-top-2 duration-200">
+                            <textarea 
+                              placeholder="Reason for difficulty..." 
+                              className="w-full p-3 bg-white border border-[#fca5a5]/30 rounded-lg text-[13px] outline-none focus:border-[#ef4444] transition-all min-h-[80px]"
+                              value={course.reason || ''}
+                              onChange={(e) => updateStudentArray('course_ratings', idx, 'reason', e.target.value)}
+                            />
+                            <div className="flex items-center gap-4">
+                              <span className="text-[12px] text-[#52525e]">Informed Faculty?</span>
+                              <div className="flex gap-2">
+                                <button 
+                                  className={`px-4 py-1 text-[11px] font-bold rounded border transition-all ${course.informed_teacher === true ? 'bg-[#ef4444] border-[#ef4444] text-white' : 'border-[#e4e4e9] text-[#9090a0] hover:bg-white'}`}
+                                  onClick={() => updateStudentArray('course_ratings', idx, 'informed_teacher', true)}
+                                >YES</button>
+                                <button 
+                                  className={`px-4 py-1 text-[11px] font-bold rounded border transition-all ${course.informed_teacher === false ? 'bg-[#ef4444] border-[#ef4444] text-white' : 'border-[#e4e4e9] text-[#9090a0] hover:bg-white'}`}
+                                  onClick={() => updateStudentArray('course_ratings', idx, 'informed_teacher', false)}
+                                >NO</button>
+                              </div>
+                            </div>
+                            <input 
+                              type="text" 
+                              placeholder="Faculty Action / Suggestion" 
+                              className="w-full p-3 bg-white border border-[#e4e4e9] rounded-lg text-[13px] outline-none focus:border-[#4f6ef7]"
+                              value={course.faculty_action || ''}
+                              onChange={(e) => updateStudentArray('course_ratings', idx, 'faculty_action', e.target.value)}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    <button 
+                      onClick={() => setFormData((prev: any) => ({
+                        ...prev, 
+                        student: { ...prev.student, course_ratings: [...prev.student.course_ratings, {}] }
+                      }))}
+                      className="w-full py-3 border-2 border-dashed border-[#e4e4e9] rounded-xl text-[#4f6ef7] text-[13px] font-bold hover:bg-[#4f6ef7]/5 hover:border-[#4f6ef7]/30 transition-all"
+                    >+ Add Another Course</button>
+                  </div>
+                </section>
+                {/* 2. STUDY HABITS */}
+                {sessionNumber === 1 && (
+                  <section className="space-y-6">
+                    <div className="flex items-center gap-3 border-b border-[#f4f4f6] pb-3">
+                      <span className="text-[11px] font-black text-[#4f6ef7] uppercase tracking-wider">SEC II</span>
+                      <h4 className="text-[13px] font-bold uppercase tracking-widest text-[#111116]">Study Habits</h4>
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-8 gap-y-6">
+                      {[
+                        { label: 'Avg study hours / day', key: 'hours', suffix: 'hrs' },
+                        { label: 'Vocab building / day', key: 'vocabulary', suffix: 'min' },
+                        { label: 'Reading comp / day', key: 'reading', suffix: 'min' },
+                        { label: 'Logical reasoning / day', key: 'reasoning', suffix: 'min' }
+                      ].map((habit) => (
+                        <div key={habit.key} className="space-y-2">
+                          <label className="text-[12px] font-medium text-[#52525e]">{habit.label}</label>
+                          <div className="relative">
+                            <input 
+                              type="number" 
+                              className="w-full bg-[#fcfcfd] border border-[#e4e4e9] rounded-lg px-4 py-2 text-[13px] focus:border-[#4f6ef7] outline-none transition-all"
+                              value={formData.student.study_habits?.[habit.key] || ''}
+                              onChange={(e) => {
+                                const val = parseFloat(e.target.value) || 0;
+                                updateStudent('study_habits', { ...formData.student.study_habits, [habit.key]: val });
+                              }}
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-[#9090a0]">{habit.suffix}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {/* 3. CO-CURRICULAR */}
+                <section className="space-y-6">
+                  <div className="flex items-center gap-3 border-b border-[#f4f4f6] pb-3">
+                    <span className="text-[11px] font-black text-[#4f6ef7] uppercase tracking-wider">SEC III</span>
+                    <h4 className="text-[13px] font-bold uppercase tracking-widest text-[#111116]">Co-Curricular Activities</h4>
+                  </div>
+                  <div className="space-y-4">
+                    {(formData.student.cocurricular_activities || []).map((act: any, idx: number) => (
+                      <div key={idx} className="p-5 bg-[#fcfcfd] border border-[#e4e4e9] rounded-xl space-y-4">
+                        <div className="flex gap-4">
+                          <input 
+                            type="text" placeholder="Activity Title (e.g. Hackathon)" 
+                            className="flex-1 bg-white border border-[#e4e4e9] rounded-lg px-4 py-2 text-[13px] focus:border-[#4f6ef7] outline-none transition-all"
+                            value={act.name || ''}
+                            onChange={(e) => updateStudentArray('cocurricular_activities', idx, 'name', e.target.value)}
+                          />
+                          <div className="flex bg-[#f4f4f6] rounded-md p-0.5">
+                            {['Member', 'Participated'].map(role => (
+                              <button 
+                                key={role}
+                                className={`px-4 py-1 text-[11px] font-bold rounded transition-all ${act.role === role ? 'bg-white shadow text-[#4f6ef7]' : 'text-[#9090a0]'}`}
+                                onClick={() => updateStudentArray('cocurricular_activities', idx, 'role', role)}
+                              >{role}</button>
+                            ))}
                           </div>
                         </div>
                         <input 
-                          type="text" 
-                          placeholder="What did faculty do?" 
-                          className="w-full p-2.5 bg-white border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-red-200"
-                          value={course.faculty_action || ''}
-                          onChange={(e) => updateStudentArray('course_ratings', idx, 'faculty_action', e.target.value)}
+                          type="text" placeholder="Achievement / Participation Details" 
+                          className="w-full bg-white border border-[#e4e4e9] rounded-lg px-4 py-2 text-[13px] focus:border-[#4f6ef7] outline-none transition-all"
+                          value={act.details || ''}
+                          onChange={(e) => updateStudentArray('cocurricular_activities', idx, 'details', e.target.value)}
                         />
                       </div>
-                    )}
+                    ))}
+                    <button 
+                      onClick={() => setFormData((prev: any) => ({
+                        ...prev, 
+                        student: { ...prev.student, cocurricular_activities: [...prev.student.cocurricular_activities, {}] }
+                      }))}
+                      className="text-[#4f6ef7] text-[12px] font-bold hover:underline transition-all"
+                    >+ Add Another Activity Record</button>
                   </div>
-                ))}
-                <button 
-                  onClick={() => setFormData((prev: any) => ({
-                    ...prev, 
-                    student: { ...prev.student, course_ratings: [...prev.student.course_ratings, {}] }
-                  }))}
-                  className="text-blue-600 font-medium hover:bg-blue-50 px-4 py-2 rounded-lg transition-colors flex items-center"
-                >
-                  <span className="mr-2">+</span> Add course
-                </button>
-              </div>
-            </section>
+                </section>
 
-            {/* 2. STUDY HABITS */}
-            {sessionNumber === 1 && (
-              <section className="mb-10">
-                <h3 className="text-xl font-semibold mb-4 text-gray-800">Your study habits</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 border border-gray-200 rounded-xl p-6">
-                  {[
-                    { label: 'Average study hours per day', key: 'hours' },
-                    { label: 'Minutes per day on vocabulary', key: 'vocabulary' },
-                    { label: 'Minutes per day on reading comprehension', key: 'reading' },
-                    { label: 'Minutes per day on logical reasoning', key: 'reasoning' }
-                  ].map((habit) => (
-                    <div key={habit.key}>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">{habit.label}</label>
-                      <input 
-                        type="number" 
-                        min="0" step="0.5"
-                        className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                        value={formData.student.study_habits?.[habit.key] || ''}
-                        onChange={(e) => {
-                          const val = parseFloat(e.target.value)
-                          setFormData((prev: any) => ({
-                            ...prev, 
-                            student: { 
-                              ...prev.student, 
-                              study_habits: { ...prev.student.study_habits, [habit.key]: isNaN(val) ? 0 : val } 
-                            }
-                          }))
-                        }}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
 
-            {/* 3. CO-CURRICULAR ACTIVITIES */}
-            <section className="mb-10">
-              <h3 className="text-xl font-semibold mb-4 text-gray-800">Activities this semester</h3>
-              <div className="space-y-4">
-                {(formData.student.cocurricular_activities || []).map((act: any, idx: number) => (
-                  <div key={idx} className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                      <select 
-                        className="p-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
-                        value={act.skill_area || ''}
-                        onChange={(e) => updateStudentArray('cocurricular_activities', idx, 'skill_area', e.target.value)}
-                      >
-                        <option value="">Select skill area</option>
-                        <option value="Technical">Technical</option>
-                        <option value="Professional Bodies">Professional Bodies</option>
-                        <option value="Literary">Literary</option>
-                        <option value="Mathematical">Mathematical</option>
-                        <option value="Social Service">Social Service</option>
-                      </select>
-                      <input 
-                        type="text" placeholder="Activity name" 
-                        className="p-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
-                        value={act.name || ''}
-                        onChange={(e) => updateStudentArray('cocurricular_activities', idx, 'name', e.target.value)}
-                      />
-                      <div className="flex bg-gray-100 rounded-lg p-1 w-fit">
-                        <button 
-                          className={`px-4 py-1.5 text-sm rounded-md transition-all ${act.role === 'Organized' ? 'bg-white shadow text-blue-600 font-medium' : 'text-gray-500'}`}
-                          onClick={() => updateStudentArray('cocurricular_activities', idx, 'role', 'Organized')}
-                        >Organized</button>
-                        <button 
-                          className={`px-4 py-1.5 text-sm rounded-md transition-all ${act.role === 'Participated' ? 'bg-white shadow text-blue-600 font-medium' : 'text-gray-500'}`}
-                          onClick={() => updateStudentArray('cocurricular_activities', idx, 'role', 'Participated')}
-                        >Participated</button>
+                {/* 4. FACILITY FEEDBACK */}
+                <section className="space-y-6">
+                  <div className="flex items-center gap-3 border-b border-[#f4f4f6] pb-3">
+                    <span className="text-[11px] font-black text-[#4f6ef7] uppercase tracking-wider">SEC IV</span>
+                    <h4 className="text-[13px] font-bold uppercase tracking-widest text-[#111116]">Facility Feedback</h4>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    {['Canteen', 'Transport', 'Sanitation', 'Library', 'Laboratories'].map(category => (
+                      <div key={category} className="space-y-2">
+                        <label className="text-[11px] font-bold text-[#9090a0] uppercase tracking-wider">{category}</label>
+                        <textarea 
+                          placeholder={`Feedback on ${category}...`} 
+                          className="w-full p-3 bg-[#fcfcfd] border border-[#e4e4e9] rounded-lg text-[13px] outline-none focus:border-[#4f6ef7] min-h-[60px] transition-all"
+                          value={formData.student.facility_feedback?.[category] || ''}
+                          onChange={(e) => {
+                            setFormData((prev: any) => ({
+                              ...prev,
+                              student: { ...prev.student, facility_feedback: { ...prev.student.facility_feedback, [category]: e.target.value } }
+                            }))
+                          }}
+                        />
                       </div>
-                    </div>
-                    <input 
-                      type="text" placeholder="Details" 
-                      className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
-                      value={act.details || ''}
-                      onChange={(e) => updateStudentArray('cocurricular_activities', idx, 'details', e.target.value)}
-                    />
+                    ))}
                   </div>
-                ))}
+                </section>
+
                 <button 
-                  onClick={() => setFormData((prev: any) => ({
-                    ...prev, 
-                    student: { ...prev.student, cocurricular_activities: [...prev.student.cocurricular_activities, {}] }
-                  }))}
-                  className="text-blue-600 font-medium hover:bg-blue-50 px-4 py-2 rounded-lg transition-colors flex items-center"
-                >
-                  <span className="mr-2">+</span> Add activity
-                </button>
-              </div>
-            </section>
-
-            {/* 4. FACILITY FEEDBACK */}
-            <section className="mb-10">
-              <h3 className="text-xl font-semibold mb-4 text-gray-800">Feedback on college facilities</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {['Canteen', 'College Transport', 'Ragging', 'Sanitation', 'Library', 'Laboratories'].map(category => (
-                  <div key={category} className="bg-gray-50 p-4 rounded-xl border border-gray-200">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">{category}</label>
-                    <textarea 
-                      placeholder="Your feedback..." 
-                      className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-y min-h-[60px]"
-                      value={formData.student.facility_feedback?.[category] || ''}
-                      onChange={(e) => {
-                        setFormData((prev: any) => ({
-                          ...prev,
-                          student: { ...prev.student, facility_feedback: { ...prev.student.facility_feedback, [category]: e.target.value } }
-                        }))
-                      }}
-                    />
+                  onClick={handleStudentDone}
+                  className="w-full py-4 bg-[#4f6ef7] hover:bg-[#3d5ce8] text-white font-bold rounded-xl shadow-lg shadow-[#4f6ef7]/20 transition-all active:scale-[0.98] text-[15px] mt-8"
+                >Hand to Mentor for Review &rarr;</button>
+              </>
+            ) : (
+              <>
+                {/* MENTOR SECTION PART B */}
+                <section className="space-y-6">
+                  <div className="flex items-center gap-3 border-b border-[#f4f4f6] pb-3">
+                    <span className="text-[11px] font-black text-[#7c3aed] uppercase tracking-wider">SEC I</span>
+                    <h4 className="text-[13px] font-bold uppercase tracking-widest text-[#111116]">Attendance & Discipline</h4>
                   </div>
-                ))}
-              </div>
-            </section>
-
-            {/* 5. GENERAL CHECK-IN */}
-            {sessionNumber === 1 && (
-              <section className="mb-10">
-                <h3 className="text-xl font-semibold mb-4 text-gray-800">Quick check-in</h3>
-                <div className="space-y-4">
-                  {[
-                    { key: 'health', label: 'Any health problems?', needsText: true },
-                    { key: 'home', label: 'Is your home environment suitable for studying?', needsText: false },
-                    { key: 'ragging', label: 'Have you experienced ragging?', needsText: true },
-                    { key: 'attendance_aware', label: 'Are you aware of attendance and CGPA regulations?', needsText: false },
-                    { key: 'parents_aware', label: 'Have you informed your parents about regulations?', needsText: false },
-                  ].map(item => (
-                    <div key={item.key} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white border border-gray-200 rounded-xl">
-                      <span className="font-medium text-gray-700 mb-3 sm:mb-0">{item.label}</span>
-                      <div className="flex items-center space-x-4">
-                        <div className="flex bg-gray-100 rounded-lg p-1 shrink-0">
-                          <button 
-                            className={`px-4 py-1.5 text-sm rounded-md transition-all ${formData.student.general_checkin?.[item.key]?.value === true ? 'bg-white shadow text-blue-600 font-medium' : 'text-gray-500'}`}
-                            onClick={() => {
-                              setFormData((prev: any) => ({
-                                ...prev, student: { ...prev.student, general_checkin: { ...prev.student.general_checkin, [item.key]: { ...prev.student.general_checkin?.[item.key], value: true } } }
-                              }))
-                            }}
-                          >Yes</button>
-                          <button 
-                            className={`px-4 py-1.5 text-sm rounded-md transition-all ${formData.student.general_checkin?.[item.key]?.value === false ? 'bg-white shadow text-blue-600 font-medium' : 'text-gray-500'}`}
-                            onClick={() => {
-                              setFormData((prev: any) => ({
-                                ...prev, student: { ...prev.student, general_checkin: { ...prev.student.general_checkin, [item.key]: { ...prev.student.general_checkin?.[item.key], value: false } } }
-                              }))
-                            }}
-                          >No</button>
-                        </div>
-                      </div>
-                      {item.needsText && formData.student.general_checkin?.[item.key]?.value && (
-                         <div className="mt-3 sm:mt-0 sm:ml-4 w-full sm:w-64">
-                           <input 
-                             type="text" placeholder="Please specify details" 
-                             className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                             value={formData.student.general_checkin?.[item.key]?.details || ''}
-                             onChange={(e) => {
-                               setFormData((prev: any) => ({
-                                 ...prev, student: { ...prev.student, general_checkin: { ...prev.student.general_checkin, [item.key]: { ...prev.student.general_checkin?.[item.key], details: e.target.value } } }
-                               }))
-                             }}
-                           />
-                         </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* DONE BUTTON */}
-            <button 
-              onClick={handleStudentDone}
-              className="w-full bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl transition-colors shadow-lg shadow-emerald-200"
-              style={{ height: '48px' }}
-            >
-              Done — hand to mentor
-            </button>
-          </div>
-        )}
-
-        {phase === 'mentor' && (
-          <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {/* Soft purple banner */}
-            <div className="bg-purple-50 border border-purple-100 rounded-lg p-4 mb-8 flex items-center text-purple-800">
-              <svg className="w-5 h-5 mr-3 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              Mentor section — student has completed their part
-            </div>
-
-            {/* 1. ATTENDANCE */}
-            <section className="mb-10">
-              <h3 className="text-xl font-semibold mb-4 text-gray-800">Attendance & Discipline</h3>
-              <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-6">
-                
-                {/* 90% Toggle */}
-                <div>
-                  <div className="flex items-center space-x-4 mb-3">
-                    <span className="text-gray-700 font-medium">Is attendance above 90%?</span>
-                    <div className="flex bg-gray-100 rounded-lg p-1">
+                                {/* 1. ATTENDANCE & DISCIPLINE CONTENT */}
+                <div className="p-6 bg-[#fcfcfd] border border-[#e4e4e9] rounded-xl space-y-6">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[13px] font-medium text-[#111116]">Is attendance above 90%?</span>
+                    <div className="flex bg-[#f4f4f6] rounded-md p-1">
                       <button 
-                        className={`px-4 py-1.5 text-sm rounded-md transition-all ${formData.mentor.attendance?.is_above_90 === true ? 'bg-white shadow text-purple-600 font-medium' : 'text-gray-500'}`}
+                        className={`px-4 py-1 text-[11px] font-bold rounded transition-all ${formData.mentor.attendance?.is_above_90 === true ? 'bg-white shadow text-[#7c3aed]' : 'text-[#9090a0]'}`}
                         onClick={() => updateMentor('attendance', { ...formData.mentor.attendance, is_above_90: true })}
-                      >Yes</button>
+                      >YES</button>
                       <button 
-                        className={`px-4 py-1.5 text-sm rounded-md transition-all ${formData.mentor.attendance?.is_above_90 === false ? 'bg-white shadow text-purple-600 font-medium' : 'text-gray-500'}`}
+                        className={`px-4 py-1 text-[11px] font-bold rounded transition-all ${formData.mentor.attendance?.is_above_90 === false ? 'bg-white shadow text-[#7c3aed]' : 'text-[#9090a0]'}`}
                         onClick={() => updateMentor('attendance', { ...formData.mentor.attendance, is_above_90: false })}
-                      >No</button>
+                      >NO</button>
                     </div>
                   </div>
-                  {formData.mentor.attendance?.is_above_90 === false && (
-                    <div className="text-amber-600 bg-amber-50 px-4 py-2 rounded-lg text-sm border border-amber-100 animate-in fade-in">
-                      Below threshold — parent contact may be required
-                    </div>
-                  )}
-                </div>
 
-                {/* Fortnightly Table */}
-                <div>
-                  <h4 className="font-medium text-gray-700 mb-3">Fortnightly attendance</h4>
-                  <div className="overflow-x-auto border border-gray-200 rounded-lg">
-                    <table className="w-full text-sm text-left text-gray-500">
-                      <thead className="text-xs text-gray-700 bg-gray-50 border-b border-gray-200">
-                        <tr>
-                          <th className="px-4 py-3">Fortnight #</th>
-                          <th className="px-4 py-3">From</th>
-                          <th className="px-4 py-3">To</th>
-                          <th className="px-4 py-3">%</th>
-                          <th className="px-4 py-3">Change</th>
-                          <th className="px-4 py-3">Parent informed</th>
-                          <th className="px-4 py-3">Date informed</th>
-                          <th className="px-4 py-3">Response</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(formData.mentor.attendance?.fortnightly_records || []).map((record: any, idx: number) => {
-                          // Auto calculate change
-                          let change = record.change || '';
-                          if (!record.change && idx > 0) {
-                            const prev = parseFloat(formData.mentor.attendance.fortnightly_records[idx-1].percentage);
-                            const curr = parseFloat(record.percentage);
-                            if (!isNaN(prev) && !isNaN(curr)) {
-                              const diff = curr - prev;
-                              change = diff > 0 ? `+${diff}%` : `${diff}%`;
-                            }
-                          }
-
-                          return (
-                            <tr key={idx} className="bg-white border-b border-gray-100 last:border-0">
-                              <td className="px-2 py-2"><input type="text" className="w-full p-1.5 border border-gray-200 rounded" value={record.number || ''} onChange={(e) => {
+                  <div className="space-y-4">
+                    <h5 className="text-[11px] font-bold uppercase text-[#9090a0] tracking-wider">Fortnightly Records</h5>
+                    <div className="overflow-x-auto rounded-lg border border-[#e4e4e9]">
+                      <table className="w-full text-[12px] text-left">
+                        <thead className="bg-[#f8f8fb] border-b border-[#e4e4e9]">
+                          <tr>
+                            <th className="px-3 py-2 font-bold text-[#52525e]">#</th>
+                            <th className="px-3 py-2 font-bold text-[#52525e]">From</th>
+                            <th className="px-3 py-2 font-bold text-[#52525e]">To</th>
+                            <th className="px-3 py-2 font-bold text-[#52525e]">%</th>
+                            <th className="px-3 py-2 font-bold text-[#52525e]">Parent Informed?</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#e4e4e9]">
+                          {(formData.mentor.attendance?.fortnightly_records || []).map((record: any, idx: number) => (
+                            <tr key={idx}>
+                              <td className="px-2 py-2"><input type="text" className="w-8 bg-transparent outline-none" value={record.number || ''} onChange={(e) => {
                                 const newRecords = [...formData.mentor.attendance.fortnightly_records];
                                 newRecords[idx] = { ...record, number: e.target.value };
                                 updateMentor('attendance', { ...formData.mentor.attendance, fortnightly_records: newRecords });
-                              }}/></td>
-                              <td className="px-2 py-2"><input type="date" className="w-full p-1.5 border border-gray-200 rounded text-xs" value={record.from || ''} onChange={(e) => {
+                              }} /></td>
+                              <td className="px-2 py-2"><input type="date" className="bg-transparent outline-none" value={record.from || ''} onChange={(e) => {
                                 const newRecords = [...formData.mentor.attendance.fortnightly_records];
                                 newRecords[idx] = { ...record, from: e.target.value };
                                 updateMentor('attendance', { ...formData.mentor.attendance, fortnightly_records: newRecords });
-                              }}/></td>
-                              <td className="px-2 py-2"><input type="date" className="w-full p-1.5 border border-gray-200 rounded text-xs" value={record.to || ''} onChange={(e) => {
+                              }} /></td>
+                              <td className="px-2 py-2"><input type="date" className="bg-transparent outline-none" value={record.to || ''} onChange={(e) => {
                                 const newRecords = [...formData.mentor.attendance.fortnightly_records];
                                 newRecords[idx] = { ...record, to: e.target.value };
                                 updateMentor('attendance', { ...formData.mentor.attendance, fortnightly_records: newRecords });
-                              }}/></td>
-                              <td className="px-2 py-2"><input type="text" className="w-16 p-1.5 border border-gray-200 rounded" value={record.percentage || ''} onChange={(e) => {
+                              }} /></td>
+                              <td className="px-2 py-2"><input type="text" className="w-10 font-bold text-[#7c3aed] outline-none" value={record.percentage || ''} onChange={(e) => {
                                 const newRecords = [...formData.mentor.attendance.fortnightly_records];
                                 newRecords[idx] = { ...record, percentage: e.target.value };
                                 updateMentor('attendance', { ...formData.mentor.attendance, fortnightly_records: newRecords });
-                              }}/></td>
-                              <td className="px-2 py-2"><input type="text" className="w-16 p-1.5 border border-gray-200 rounded bg-gray-50" readOnly value={change}/></td>
+                              }} /></td>
                               <td className="px-2 py-2">
-                                <select className="w-full p-1.5 border border-gray-200 rounded" value={record.parent_informed || ''} onChange={(e) => {
+                                <select className="bg-transparent outline-none" value={record.parent_informed || ''} onChange={(e) => {
                                   const newRecords = [...formData.mentor.attendance.fortnightly_records];
                                   newRecords[idx] = { ...record, parent_informed: e.target.value };
                                   updateMentor('attendance', { ...formData.mentor.attendance, fortnightly_records: newRecords });
                                 }}>
-                                  <option value="">-</option>
-                                  <option value="Y">Y</option>
-                                  <option value="N">N</option>
-                                  <option value="NA">NA</option>
+                                  <option value="N">NO</option>
+                                  <option value="Y">YES</option>
                                 </select>
                               </td>
-                              <td className="px-2 py-2"><input type="date" className="w-full p-1.5 border border-gray-200 rounded text-xs" value={record.date_informed || ''} onChange={(e) => {
-                                const newRecords = [...formData.mentor.attendance.fortnightly_records];
-                                newRecords[idx] = { ...record, date_informed: e.target.value };
-                                updateMentor('attendance', { ...formData.mentor.attendance, fortnightly_records: newRecords });
-                              }}/></td>
-                              <td className="px-2 py-2"><input type="text" className="w-full p-1.5 border border-gray-200 rounded" value={record.response || ''} onChange={(e) => {
-                                const newRecords = [...formData.mentor.attendance.fortnightly_records];
-                                newRecords[idx] = { ...record, response: e.target.value };
-                                updateMentor('attendance', { ...formData.mentor.attendance, fortnightly_records: newRecords });
-                              }}/></td>
                             </tr>
-                          )
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                  <button 
-                    onClick={() => {
-                      const current = formData.mentor.attendance?.fortnightly_records || [];
-                      updateMentor('attendance', { ...formData.mentor.attendance, fortnightly_records: [...current, {}] });
-                    }}
-                    className="mt-3 text-purple-600 text-sm font-medium hover:bg-purple-50 px-3 py-1.5 rounded-lg transition-colors"
-                  >
-                    + Add fortnight
-                  </button>
-                </div>
-
-                {/* Indiscipline */}
-                <div className="pt-4 border-t border-gray-100">
-                  <div className="flex items-center space-x-4">
-                    <span className="text-gray-700 font-medium">Any indiscipline?</span>
-                    <div className="flex bg-gray-100 rounded-lg p-1">
-                      <button 
-                        className={`px-4 py-1.5 text-sm rounded-md transition-all ${formData.mentor.indiscipline?.has_indiscipline === true ? 'bg-white shadow text-purple-600 font-medium' : 'text-gray-500'}`}
-                        onClick={() => updateMentor('indiscipline', { ...formData.mentor.indiscipline, has_indiscipline: true })}
-                      >Yes</button>
-                      <button 
-                        className={`px-4 py-1.5 text-sm rounded-md transition-all ${formData.mentor.indiscipline?.has_indiscipline === false ? 'bg-white shadow text-purple-600 font-medium' : 'text-gray-500'}`}
-                        onClick={() => updateMentor('indiscipline', { ...formData.mentor.indiscipline, has_indiscipline: false })}
-                      >No</button>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
+                    <button 
+                      onClick={() => {
+                        const current = formData.mentor.attendance?.fortnightly_records || [];
+                        updateMentor('attendance', { ...formData.mentor.attendance, fortnightly_records: [...current, {}] });
+                      }}
+                      className="text-[#7c3aed] text-[11px] font-bold hover:underline"
+                    >+ Add Fortnight</button>
                   </div>
-                  {formData.mentor.indiscipline?.has_indiscipline && (
-                    <textarea 
-                      placeholder="Details of indiscipline..." 
-                      className="w-full mt-4 p-3 bg-red-50/30 border border-red-100 rounded-lg outline-none focus:ring-2 focus:ring-red-200 animate-in fade-in resize-y min-h-[80px]"
-                      value={formData.mentor.indiscipline.details || ''}
-                      onChange={(e) => updateMentor('indiscipline', { ...formData.mentor.indiscipline, details: e.target.value })}
-                    />
-                  )}
                 </div>
+              </section>
 
-              </div>
-            </section>
+              <section className="space-y-6">
+                <div className="flex items-center gap-3 border-b border-[#f4f4f6] pb-3">
+                  <span className="text-[11px] font-black text-[#7c3aed] uppercase tracking-wider">SEC II</span>
+                  <h4 className="text-[13px] font-bold uppercase tracking-widest text-[#111116]">Mentor Assessment</h4>
+                </div>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-[12px] font-bold text-[#52525e] uppercase tracking-wider">Overall Observation</label>
+                    <textarea 
+                      className="w-full p-4 bg-[#fcfcfd] border border-[#e4e4e9] rounded-xl text-[13px] outline-none focus:border-[#7c3aed] min-h-[120px] leading-relaxed"
+                      placeholder="Attitude, behavior, academic focus..."
+                      value={formData.mentor.mentor_observation || ''}
+                      onChange={(e) => updateMentor('mentor_observation', e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[12px] font-bold text-[#52525e] uppercase tracking-wider">Specific Recommendation</label>
+                    <textarea 
+                      className="w-full p-4 bg-[#fcfcfd] border border-[#e4e4e9] rounded-xl text-[13px] outline-none focus:border-[#7c3aed] min-h-[100px] leading-relaxed"
+                      placeholder="Actions required by student or faculty..."
+                      value={formData.mentor.mentor_recommendation || ''}
+                      onChange={(e) => updateMentor('mentor_recommendation', e.target.value)}
+                    />
+                  </div>
+                </div>
+              </section>
 
             {/* 2. ATTRIBUTE IMPROVEMENT */}
             <section className="mb-10">
-              <h3 className="text-xl font-semibold mb-4 text-gray-800">Attribute improvement since last session</h3>
-              <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+              <h3 className="text-xl font-semibold mb-4 text-[#f0f0f5]">Attribute improvement since last session</h3>
+              <div className="bg-[#111118] border border-[rgba(255,255,255,0.06)] rounded-xl overflow-hidden shadow-sm">
                 {(formData.mentor.attribute_improvement || []).map((item: any, idx: number) => (
-                  <div key={idx} className="flex flex-col md:flex-row md:items-center p-4 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
-                    <div className="w-[140px] font-medium text-gray-700 mb-3 md:mb-0 shrink-0">
+                  <div key={idx} className="flex flex-col md:flex-row md:items-center p-4 border-b border-[rgba(255,255,255,0.06)] last:border-0 hover:bg-[#0d0d14] transition-colors">
+                    <div className="w-[140px] font-medium text-[#f0f0f5] mb-3 md:mb-0 shrink-0">
                       {item.attribute}
                     </div>
-                    <div className="flex bg-gray-100 rounded-lg p-1 shrink-0 mr-4">
+                    <div className="flex bg-[#16161f] rounded-lg p-1 shrink-0 mr-4">
                       {['Yes', 'No', 'Insignificant'].map(opt => (
                         <button 
                           key={opt}
-                          className={`px-3 py-1.5 text-sm rounded-md transition-all ${item.status === opt ? 'bg-white shadow text-purple-600 font-medium' : 'text-gray-500'}`}
+                          className={`px-3 py-1.5 text-sm rounded-md transition-all ${item.status === opt ? 'bg-[#111118] shadow text-[#7c3aed] font-medium' : 'text-[#8b8b9e]'}`}
                           onClick={() => updateMentorArray('attribute_improvement', idx, 'status', opt)}
                         >{opt}</button>
                       ))}
                     </div>
                     <input 
                       type="text" placeholder="Mentor suggestion" 
-                      className="flex-1 min-w-[200px] mt-3 md:mt-0 p-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
+                      className="flex-1 min-w-[200px] mt-3 md:mt-0 p-2 text-sm border border-[rgba(255,255,255,0.06)] rounded-lg focus:ring-2 focus:ring-[rgba(124,58,237,0.15)] focus:border-[#7c3aed] outline-none"
                       value={item.suggestion || ''}
                       onChange={(e) => updateMentorArray('attribute_improvement', idx, 'suggestion', e.target.value)}
                     />
@@ -632,8 +552,8 @@ export default function SessionMode({
             {/* 3. TRANSFORMATION ANALYSIS */}
             {sessionNumber >= 2 && (
               <section className="mb-10">
-                <h3 className="text-xl font-semibold mb-4 text-gray-800">Transformation analysis</h3>
-                <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                <h3 className="text-xl font-semibold mb-4 text-[#f0f0f5]">Transformation analysis</h3>
+                <div className="bg-[#111118] border border-[rgba(255,255,255,0.06)] rounded-xl overflow-hidden shadow-sm">
                   {[
                     "Q28. Is there any improvement in marks scored?",
                     "Q29. Did you observe improvement in attendance percentage?",
@@ -647,15 +567,15 @@ export default function SessionMode({
                   ].map((question, idx) => {
                     const ans = formData.mentor.transformation_analysis?.[idx]?.answer;
                     return (
-                      <div key={idx} className="flex flex-col md:flex-row md:items-center justify-between p-4 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
-                        <div className="text-sm text-gray-700 mb-3 md:mb-0 pr-4 flex-1">
+                      <div key={idx} className="flex flex-col md:flex-row md:items-center justify-between p-4 border-b border-[rgba(255,255,255,0.06)] last:border-0 hover:bg-[#0d0d14] transition-colors">
+                        <div className="text-sm text-[#f0f0f5] mb-3 md:mb-0 pr-4 flex-1">
                           {question}
                         </div>
-                        <div className="flex bg-gray-100 rounded-lg p-1 shrink-0">
+                        <div className="flex bg-[#16161f] rounded-lg p-1 shrink-0">
                           {['Yes', 'No', 'Insignificant', 'NA'].map(opt => (
                             <button 
                               key={opt}
-                              className={`px-3 py-1.5 text-xs rounded-md transition-all ${ans === opt ? 'bg-white shadow text-purple-600 font-medium' : 'text-gray-500'}`}
+                              className={`px-3 py-1.5 text-xs rounded-md transition-all ${ans === opt ? 'bg-[#111118] shadow text-[#7c3aed] font-medium' : 'text-[#8b8b9e]'}`}
                               onClick={() => {
                                 const arr = [...(formData.mentor.transformation_analysis || [])];
                                 arr[idx] = { question, answer: opt };
@@ -673,11 +593,11 @@ export default function SessionMode({
 
             {/* 4. TEST SCORES */}
             <section className="mb-10">
-              <h3 className="text-xl font-semibold mb-4 text-gray-800">Aptitude & test scores this semester</h3>
-              <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-                <div className="overflow-hidden rounded-lg border border-gray-200">
-                  <table className="w-full text-sm text-left text-gray-600">
-                    <thead className="text-xs text-gray-700 bg-gray-50 border-b border-gray-200">
+              <h3 className="text-xl font-semibold mb-4 text-[#f0f0f5]">Aptitude & test scores this semester</h3>
+              <div className="bg-[#111118] border border-[rgba(255,255,255,0.06)] rounded-xl p-5 shadow-sm">
+                <div className="overflow-hidden rounded-lg border border-[rgba(255,255,255,0.06)]">
+                  <table className="w-full text-sm text-left text-[#8b8b9e]">
+                    <thead className="text-xs text-[#f0f0f5] bg-[#0d0d14] border-b border-[rgba(255,255,255,0.06)]">
                       <tr>
                         <th className="px-4 py-3 w-24">Test #</th>
                         <th className="px-4 py-3">Type</th>
@@ -687,10 +607,10 @@ export default function SessionMode({
                     </thead>
                     <tbody>
                       {(formData.mentor.aptitude_test_scores || []).map((test: any, idx: number) => (
-                        <tr key={idx} className="border-b border-gray-100 last:border-0 bg-white">
-                          <td className="px-3 py-2"><input type="text" className="w-full p-1.5 border border-gray-200 rounded" placeholder="Test 1" value={test.number || ''} onChange={(e) => updateMentorArray('aptitude_test_scores', idx, 'number', e.target.value)}/></td>
+                        <tr key={idx} className="border-b border-[rgba(255,255,255,0.06)] last:border-0 bg-[#111118]">
+                          <td className="px-3 py-2"><input type="text" className="w-full p-1.5 border border-[rgba(255,255,255,0.06)] rounded" placeholder="Test 1" value={test.number || ''} onChange={(e) => updateMentorArray('aptitude_test_scores', idx, 'number', e.target.value)}/></td>
                           <td className="px-3 py-2">
-                            <select className="w-full p-1.5 border border-gray-200 rounded outline-none" value={test.type || ''} onChange={(e) => updateMentorArray('aptitude_test_scores', idx, 'type', e.target.value)}>
+                            <select className="w-full p-1.5 border border-[rgba(255,255,255,0.06)] rounded outline-none" value={test.type || ''} onChange={(e) => updateMentorArray('aptitude_test_scores', idx, 'type', e.target.value)}>
                               <option value="">Select type</option>
                               <option value="Quantitative">Quantitative</option>
                               <option value="Verbal">Verbal</option>
@@ -698,7 +618,7 @@ export default function SessionMode({
                               <option value="Programming">Programming</option>
                             </select>
                           </td>
-                          <td className="px-3 py-2"><input type="text" className="w-full p-1.5 border border-gray-200 rounded" placeholder="Score / Percentile" value={test.score || ''} onChange={(e) => updateMentorArray('aptitude_test_scores', idx, 'score', e.target.value)}/></td>
+                          <td className="px-3 py-2"><input type="text" className="w-full p-1.5 border border-[rgba(255,255,255,0.06)] rounded" placeholder="Score / Percentile" value={test.score || ''} onChange={(e) => updateMentorArray('aptitude_test_scores', idx, 'score', e.target.value)}/></td>
                           <td className="px-3 py-2 text-center">
                             <button onClick={() => {
                               const arr = [...formData.mentor.aptitude_test_scores];
@@ -716,47 +636,21 @@ export default function SessionMode({
                     const arr = formData.mentor.aptitude_test_scores || [];
                     updateMentor('aptitude_test_scores', [...arr, {}]);
                   }}
-                  className="mt-3 text-purple-600 text-sm font-medium hover:bg-purple-50 px-3 py-1.5 rounded-lg transition-colors inline-block"
+                  className="mt-3 text-[#7c3aed] text-sm font-medium hover:bg-[rgba(124,58,237,0.08)] px-3 py-1.5 rounded-lg transition-colors inline-block"
                 >
-                  + Add test score
+                  + Add score
                 </button>
               </div>
             </section>
-
-            {/* 5. MENTOR OBSERVATION */}
-            <section className="mb-10">
-              <label className="block text-xl font-semibold mb-2 text-gray-800">Observation — attitude, behaviour, academics, career focus</label>
-              <textarea 
-                className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none resize-y min-h-[120px] shadow-sm text-gray-700"
-                placeholder="Write your observations here..."
-                value={formData.mentor.mentor_observation || ''}
-                onChange={(e) => updateMentor('mentor_observation', e.target.value)}
-              />
-            </section>
-
-            {/* 6. MENTOR RECOMMENDATION */}
-            <section className="mb-10">
-              <label className="block text-xl font-semibold mb-2 text-gray-800">Recommendation for this student</label>
-              <textarea 
-                className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none resize-y min-h-[100px] shadow-sm text-gray-700"
-                placeholder="What is your recommendation?"
-                value={formData.mentor.mentor_recommendation || ''}
-                onChange={(e) => updateMentor('mentor_recommendation', e.target.value)}
-              />
-              {formData.mentor.mentor_recommendation && formData.mentor.mentor_recommendation.trim().split(/\s+/).length < 10 && (
-                <div className="mt-2 text-amber-600 text-sm flex items-center">
-                  <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                  This seems short — please give a specific recommendation
-                </div>
-              )}
-            </section>
+            <button 
+              onClick={handleMentorComplete}
+              className="w-full py-4 bg-[#7c3aed] hover:bg-[#6d28d9] text-white font-bold rounded-xl shadow-lg shadow-[#7c3aed]/20 transition-all active:scale-[0.98] text-[15px]"
+            >Finalize Session Entry &rarr;</button>
 
             {/* 7. SIGNATURES */}
             <section className="mb-10">
-              <h3 className="text-xl font-semibold mb-4 text-gray-800">Signatures</h3>
-              <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-4">
+              <h3 className="text-xl font-semibold mb-4 text-[#f0f0f5]">Signatures</h3>
+              <div className="bg-[#111118] border border-[rgba(255,255,255,0.06)] rounded-xl p-5 shadow-sm space-y-4">
                 {[
                   { key: 'mentee', label: 'Mentee' },
                   { key: 'mentor', label: 'Mentor' },
@@ -764,11 +658,11 @@ export default function SessionMode({
                 ].map(role => {
                   const isSigned = formData.mentor.signatures?.[role.key]?.signed;
                   return (
-                    <div key={role.key} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
-                      <span className="font-medium text-gray-700 w-32">{role.label}</span>
+                    <div key={role.key} className="flex items-center justify-between p-3 bg-[#0d0d14] rounded-lg border border-[rgba(255,255,255,0.06)]">
+                      <span className="font-medium text-[#f0f0f5] w-32">{role.label}</span>
                       <div className="flex bg-gray-200 rounded-lg p-1 mx-4">
                         <button 
-                          className={`px-4 py-1.5 text-sm rounded-md transition-all ${isSigned === true ? 'bg-white shadow text-purple-600 font-medium' : 'text-gray-500'}`}
+                          className={`px-4 py-1.5 text-sm rounded-md transition-all ${isSigned === true ? 'bg-[#111118] shadow text-[#7c3aed] font-medium' : 'text-[#8b8b9e]'}`}
                           onClick={() => {
                             const sigs = { ...formData.mentor.signatures };
                             sigs[role.key] = { signed: true, date: sigs[role.key]?.date || new Date().toISOString().split('T')[0] };
@@ -776,7 +670,7 @@ export default function SessionMode({
                           }}
                         >Signed</button>
                         <button 
-                          className={`px-4 py-1.5 text-sm rounded-md transition-all ${isSigned === false || isSigned === undefined ? 'bg-white shadow text-purple-600 font-medium' : 'text-gray-500'}`}
+                          className={`px-4 py-1.5 text-sm rounded-md transition-all ${isSigned === false || isSigned === undefined ? 'bg-[#111118] shadow text-[#7c3aed] font-medium' : 'text-[#8b8b9e]'}`}
                           onClick={() => {
                             const sigs = { ...formData.mentor.signatures };
                             sigs[role.key] = { signed: false };
@@ -788,7 +682,7 @@ export default function SessionMode({
                         {isSigned && (
                           <input 
                             type="date" 
-                            className="p-1.5 border border-gray-300 rounded text-sm text-gray-600 outline-none w-full"
+                            className="p-1.5 border border-[rgba(255,255,255,0.10)] rounded text-sm text-[#8b8b9e] outline-none w-full"
                             value={formData.mentor.signatures?.[role.key]?.date || ''}
                             onChange={(e) => {
                               const sigs = { ...formData.mentor.signatures };
@@ -803,48 +697,48 @@ export default function SessionMode({
                 })}
               </div>
             </section>
+            </>
+          )}
           </div>
-        )}
+        </div>
       </div>
 
       {/* OVERLAY for HANDOFF */}
       {showOverlay && (
-        <div className="fixed inset-0 z-50 bg-white flex flex-col items-center justify-center animate-in fade-in duration-300">
-          <div className="bg-gray-100 p-6 rounded-full mb-6">
-            <i className="ti ti-lock text-gray-700" style={{ fontSize: '48px' }}></i>
+        <div className="absolute inset-0 bg-white/95 backdrop-blur-sm z-50 flex items-center justify-center p-12 text-center animate-in fade-in duration-300">
+          <div className="max-w-xs space-y-6">
+            <div className="w-20 h-20 bg-[#ecfdf5] text-[#059669] rounded-full flex items-center justify-center text-3xl mx-auto shadow-sm">✓</div>
+            <div>
+              <h3 className="text-[18px] font-bold text-[#111116] mb-2">Section A Complete</h3>
+              <p className="text-[13px] text-[#52525e] leading-relaxed">Student records have been saved. Please hand the device back to the mentor to complete Part B.</p>
+            </div>
+            <button 
+              onClick={() => {
+                setPhase('mentor');
+                setShowOverlay(false);
+              }}
+              className="w-full py-3 bg-[#111116] text-white font-bold rounded-xl text-[13px]"
+            >I am the Mentor</button>
           </div>
-          <h2 className="text-3xl font-bold text-gray-800 mb-8 max-w-sm text-center">Thank you. Please hand the device to your mentor.</h2>
-          <button 
-            onClick={() => {
-              setPhase('mentor');
-              setShowOverlay(false);
-              window.scrollTo(0, 0);
-            }}
-            className="px-8 py-4 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-xl transition-colors shadow-lg shadow-purple-200 text-lg"
-          >
-            I am the mentor — continue
-          </button>
         </div>
       )}
 
-      {/* STICKY BOTTOM BAR */}
-      <div 
-        className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 px-6 flex items-center justify-between shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-40" 
-        style={{ 
-          backgroundColor: 'var(--color-background-primary)', 
-          borderTop: '0.5px solid var(--color-border-tertiary)' 
-        }}
-      >
-        <div className="text-[11px] text-gray-400">
-          Auto-saved
-        </div>
+      {/* STICKY BOTTOM ACTIONS */}
+      <div className="bg-white border-t border-[#e4e4e9] px-8 py-4 flex items-center justify-between shadow-[0_-4px_12px_rgba(0,0,0,0.03)] shrink-0 z-40">
         <button 
-          onClick={handleMentorComplete}
-          disabled={saving}
-          className="bg-purple-600 hover:bg-purple-700 text-white rounded-lg px-5 py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
-        >
-          {saving ? 'Saving...' : 'Continue to Validate'}
-        </button>
+          onClick={onComplete}
+          className="text-[13px] font-semibold text-[#52525e] hover:bg-[#f4f4f6] px-4 py-2 rounded-lg transition-all"
+        >Discard & Exit</button>
+        <div className="flex items-center gap-3">
+          {saving ? (
+            <span className="text-[12px] text-[#9090a0] animate-pulse">Saving changes...</span>
+          ) : (
+            <button 
+              onClick={saveImmediate}
+              className="text-[13px] font-bold text-[#4f6ef7] hover:bg-[#4f6ef7]/5 px-4 py-2 rounded-lg transition-all underline underline-offset-4"
+            >Save Progress</button>
+          )}
+        </div>
       </div>
     </div>
   )

@@ -71,23 +71,24 @@ export default function CreateUserDialog({ role, open, onClose, onSuccess }: Cre
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl shadow-black/10 border border-[#e4e4e9]">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-[15px] font-semibold text-[#111116]">
             Create {role === 'mentor' ? 'Mentor' : 'Student'}
           </h2>
           <button
+            type="button"
             onClick={handleClose}
-            className="text-gray-500 hover:text-gray-700"
+            className="w-8 h-8 rounded-lg hover:bg-[#f4f4f6] flex items-center justify-center text-[#9090a0] hover:text-[#111116] transition-all"
           >
-            <X size={20} />
+            ×
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-[12px] font-medium text-[#52525e] mb-1.5">
               Name
             </label>
             <input
@@ -95,12 +96,12 @@ export default function CreateUserDialog({ role, open, onClose, onSuccess }: Cre
               required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-white border border-[#d1d1db] rounded-lg text-[13px] text-[#111116] placeholder-[#9090a0] focus:border-[#4f6ef7] focus:ring-2 focus:ring-[#4f6ef7]/15 outline-none transition-all"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-[12px] font-medium text-[#52525e] mb-1.5">
               Email
             </label>
             <input
@@ -108,12 +109,12 @@ export default function CreateUserDialog({ role, open, onClose, onSuccess }: Cre
               required
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-white border border-[#d1d1db] rounded-lg text-[13px] text-[#111116] placeholder-[#9090a0] focus:border-[#4f6ef7] focus:ring-2 focus:ring-[#4f6ef7]/15 outline-none transition-all"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-[12px] font-medium text-[#52525e] mb-1.5">
               Password
             </label>
             <input
@@ -122,34 +123,34 @@ export default function CreateUserDialog({ role, open, onClose, onSuccess }: Cre
               minLength={8}
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-white border border-[#d1d1db] rounded-lg text-[13px] text-[#111116] placeholder-[#9090a0] focus:border-[#4f6ef7] focus:ring-2 focus:ring-[#4f6ef7]/15 outline-none transition-all"
             />
           </div>
 
           {error && (
-            <div className="text-red-600 text-sm">
+            <div className="text-[12px] text-[#dc2626] bg-[#fef2f2] border border-[#fecaca] rounded-lg px-3 py-2">
               {error}
             </div>
           )}
 
           {success && (
-            <div className="text-green-600 text-sm">
+            <div className="text-[12px] text-[#059669] bg-[#ecfdf5] border border-[#a7f3d0] rounded-lg px-3 py-2">
               {success}
             </div>
           )}
 
-          <div className="flex justify-end space-x-3">
+          <div className="flex justify-end gap-2 pt-2">
             <button
               type="button"
               onClick={handleClose}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+              className="px-4 py-2 text-[13px] font-medium text-[#52525e] bg-white border border-[#d1d1db] rounded-lg hover:bg-[#f8f8fb] transition-all"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading || success !== ''}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+              className="px-4 py-2 text-[13px] font-medium text-white bg-[#4f6ef7] hover:bg-[#3d5ce8] rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Creating...' : success ? 'Created!' : 'Create User'}
             </button>

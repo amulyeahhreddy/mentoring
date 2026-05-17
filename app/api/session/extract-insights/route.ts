@@ -8,9 +8,10 @@ const supabaseAdmin = createClient(
 
 export async function POST(request: NextRequest) {
   try {
-    const { session_id, transcript } = await request.json();
+    const { session_id, transcript, transcript_text } = await request.json();
+    const transcriptContent = transcript || transcript_text;
 
-    if (!session_id || !transcript) {
+    if (!session_id || !transcriptContent) {
       return NextResponse.json({ 
         error: 'Missing session_id or transcript' 
       }, { status: 400 });
@@ -20,26 +21,36 @@ export async function POST(request: NextRequest) {
 Extract ONLY what is explicitly mentioned. Never invent information.
 Return ONLY valid JSON, no markdown, no explanation.
 {
-  "summary": "2-3 sentence summary",
-  "key_issues": [{"issue": "", "category": "academic|financial|personal|health|social|career|unclear", "confidence": 0.9}],
-  "tasks_assigned": [{"task": "", "assigned_to": "student|mentor|both", "due_by": "null", "inferred_from_quote": "null"}],
-  "emotional_behavioral": {"overall_tone": "positive|neutral|anxious|disengaged|distressed|unclear", "engagement_level": "high|medium|low|unclear", "confidence_level": "high|medium|low|unclear", "observations": ""},
-  "risk_flags": [{"flag_code": "", "description": "", "severity": "low|medium|high|critical", "evidence_quote": "null", "recommended_action": "null"}],
+  "summary": "2-3 sentence summary of the session",
+  "decisions": {
+    "narrative": "What was decided and agreed upon this session in 1-2 sentences",
+    "commitments": [{"task": "", "assigned_to": "student|mentor|both", "due": "", "evidence_quote": ""}]
+  },
+  "tasks_assigned": [{"task": "", "assigned_to": "student|mentor|both", "due_by": "", "source": "ai_extracted"}],
+  "emotional_behavioral": {"overall_tone": "positive|neutral|anxious|disengaged|distressed", "engagement_level": "high|medium|low", "confidence_level": "high|medium|low", "observations": ""},
+  "risk_flags": [{"flag_code": "RF01", "description": "", "severity": "low|medium|high|critical", "evidence_quote": "", "recommended_action": ""}],
+  "patterns": [{"label": "", "description": "", "type": "positive|negative|neutral", "session_count": 1}],
+  "suggested_questions": [{"question": "", "reason": "", "type": "follow_up|probe|check_in|academic"}],
+  "key_issues": [{"issue": "", "category": "academic|financial|personal|health|social|career", "confidence": 0.9}],
   "ai_confidence_overall": 0.85
-}`;
+}
+`;
 
     // Call Ollama API
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 120000)
+    
     const ollamaResponse = await fetch('http://localhost:11434/api/generate', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'qwen2.5:3b',
-        prompt: systemPrompt + '\n\nTranscript:\n' + transcript,
+        prompt: systemPrompt + '\n\nTranscript:\n' + transcriptContent,
         stream: false
-      })
-    });
+      }),
+      signal: controller.signal
+    })
+    clearTimeout(timeoutId)
 
     if (!ollamaResponse.ok) {
       return NextResponse.json({ 

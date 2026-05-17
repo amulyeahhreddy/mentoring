@@ -180,358 +180,259 @@ export default function BriefingMode({ selectedStudent, mentorId, onNewSession, 
   }
 
   return (
-    <div className="flex flex-col h-full bg-gray-950 text-white relative">
+    <div className="flex flex-col h-full bg-[#f4f4f6] text-[#111116] relative font-sans overflow-hidden">
       <div className="flex-1 overflow-y-auto pb-24">
-        <div className="p-8 space-y-10 max-w-5xl mx-auto w-full">
-          
-          {/* SECTION 1: IDENTITY ROW */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-blue-900 text-blue-200 flex items-center justify-center font-medium text-lg shrink-0">
-                {getInitials(selectedStudent.name)}
+        {/* IDENTITY HEADER */}
+        <div className="bg-white border-b border-[#e4e4e9] px-8 py-5 flex items-center justify-between sticky top-0 z-20">
+          <div className="flex items-center gap-4">
+            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#4f6ef7] to-[#7c3aed] flex items-center justify-center text-white font-semibold text-[15px] shrink-0">
+              {getInitials(selectedStudent.name)}
+            </div>
+            <div>
+              <div className="flex items-center gap-3">
+                <h2 className="text-[17px] font-semibold text-[#111116]">{selectedStudent.name}</h2>
+                <span className="bg-[#eef1fe] text-[#3548c9] text-[11px] font-medium px-2 py-0.5 rounded-full">
+                  Session {sessions.length}
+                </span>
               </div>
-              <div>
-                <div className="text-[16px] font-medium">{selectedStudent.name}</div>
-                <div className="text-[12px] text-gray-400 mt-0.5">
-                  {selectedStudent.email || selectedStudent.id} &middot; B.Tech &middot; Session {sessions.length}
+              <p className="text-[13px] text-[#52525e]">
+                {selectedStudent.email} &middot; B.Tech
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <button 
+              onClick={handleExport}
+              disabled={exporting}
+              className="bg-white border border-[#d1d1db] hover:bg-[#f8f8fb] text-[#111116] rounded-lg px-4 py-2 text-[13px] font-medium transition-all flex items-center gap-2"
+            >
+              {exporting ? 'Exporting...' : 'Export diary'}
+            </button>
+            <button 
+              onClick={onNewSession}
+              className="bg-[#4f6ef7] hover:bg-[#3d5ce8] text-white rounded-lg px-4 py-2 text-[13px] font-medium transition-all"
+            >
+              New session +
+            </button>
+          </div>
+        </div>
+
+        <div className="p-8 space-y-8 max-w-6xl mx-auto">
+          {/* METRIC CARDS */}
+          <div className="grid grid-cols-4 gap-4">
+            {[
+              { label: 'Attendance', value: latestAttendance != null ? `${latestAttendance}%` : '—', trend: attendanceTrend, color: latestAttendance != null && latestAttendance < 75 ? 'text-[#dc2626]' : 'text-[#059669]' },
+              { label: 'Current CGPA', value: latestCgpa != null ? latestCgpa : '—', trend: cgpaTrend, color: 'text-[#111116]' },
+              { label: 'Backlogs', value: backlogsText, trend: backlogsSub, color: backlogs > 0 ? 'text-[#dc2626]' : 'text-[#059669]' },
+              { label: 'Open Tasks', value: openTasksCount, trend: openTasksSub, color: overdueTasks.length > 0 ? 'text-[#dc2626]' : 'text-[#111116]' }
+            ].map((m, i) => (
+              <div key={i} className="bg-white border border-[#e4e4e9] rounded-xl shadow-sm p-5">
+                <div className="text-[11px] uppercase tracking-widest text-[#9090a0] font-medium mb-3">{m.label}</div>
+                <div className={`text-[26px] font-semibold tabular-nums mb-1 ${m.color}`}>{m.value}</div>
+                <div className={`text-[12px] font-medium ${m.trend.color.includes('red') ? 'text-[#dc2626]' : m.trend.color.includes('green') ? 'text-[#059669]' : 'text-[#9090a0]'}`}>
+                  {m.trend.text}
                 </div>
               </div>
-            </div>
-            <div className="flex gap-3">
-              <button 
-                onClick={handleExport}
-                disabled={exporting}
-                className="px-4 py-2 text-sm font-medium bg-gray-800 hover:bg-gray-700 rounded transition flex items-center gap-2"
-              >
-                {exporting ? (
-                  <span className="flex items-center gap-2">
-                    <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                    Exporting...
-                  </span>
-                ) : 'Export diary PDF'}
-              </button>
-              <button 
-                onClick={onNewSession}
-                className="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded transition"
-              >
-                New session
-              </button>
-            </div>
+            ))}
           </div>
 
-          {/* SECTION 2: METRIC CARDS */}
-          <div className="grid grid-cols-4 gap-4">
-            <div className="bg-[#1f2937] rounded p-4 border border-gray-800">
-              <div className="text-[11px] uppercase text-gray-500 tracking-wider mb-2">Attendance</div>
-              <div className="text-[22px] font-medium mb-1">
-                {latestAttendance != null ? `${latestAttendance}%` : '—'}
-              </div>
-              <div className={`text-[11px] ${attendanceTrend.color}`}>{attendanceTrend.text}</div>
+          {/* RISK FLAGS */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <h3 className="text-[11px] uppercase tracking-widest text-[#9090a0] font-medium">Risk flags</h3>
+              <span className="bg-[#fef2f2] text-[#dc2626] text-[11px] font-medium px-2 py-0.5 rounded-full">{flags.length}</span>
             </div>
-            <div className="bg-[#1f2937] rounded p-4 border border-gray-800">
-              <div className="text-[11px] uppercase text-gray-500 tracking-wider mb-2">Current CGPA</div>
-              <div className="text-[22px] font-medium mb-1">
-                {latestCgpa != null ? latestCgpa : '—'}
-              </div>
-              <div className={`text-[11px] ${cgpaTrend.color}`}>{cgpaTrend.text}</div>
-            </div>
-            <div className="bg-[#1f2937] rounded p-4 border border-gray-800">
-              <div className="text-[11px] uppercase text-gray-500 tracking-wider mb-2">Backlogs</div>
-              <div className={`text-[22px] font-medium mb-1 ${backlogsColor}`}>
-                {backlogsText}
-              </div>
-              <div className={`text-[11px] ${backlogsSub.color}`}>{backlogsSub.text}</div>
-            </div>
-            <div className="bg-[#1f2937] rounded p-4 border border-gray-800">
-              <div className="text-[11px] uppercase text-gray-500 tracking-wider mb-2">Open Tasks</div>
-              <div className="text-[22px] font-medium mb-1">{openTasksCount}</div>
-              <div className={`text-[11px] ${openTasksSub.color}`}>{openTasksSub.text}</div>
-            </div>
-          </div>
-
-          {/* SECTION 3: RISK FLAGS */}
-          <div>
-            <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
-              <span className="text-amber-500">⚠</span> Active risk flags
-            </h3>
-            <div className="space-y-2">
+            <div className="grid gap-3">
               {flags.length === 0 ? (
-                <div className="text-sm text-green-500 bg-green-500/10 p-3 rounded">
-                  No active risk flags ✓
+                <div className="bg-white border border-[#e4e4e9] p-4 rounded-xl shadow-sm flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-[#059669]" />
+                  <span className="text-[13px] text-[#059669] font-medium">No active risk flags</span>
                 </div>
               ) : (
-                flags.map((flag, i) => {
-                  const bg = flag.severity === 'critical' ? 'bg-red-500' : flag.severity === 'high' ? 'bg-amber-500' : 'bg-gray-500';
+                flags.map((flag, i) => (
+                  <div key={i} className={`bg-white border border-[#e4e4e9] rounded-xl shadow-sm p-4 border-l-[3px] flex items-center gap-4 ${
+                    flag.severity === 'critical' ? 'border-l-[#dc2626]' : flag.severity === 'high' ? 'border-l-[#dc2626]' : 'border-l-[#d97706]'
+                  }`}>
+                    <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
+                      flag.severity === 'critical' || flag.severity === 'high' ? 'bg-[#fef2f2] text-[#dc2626]' : 'bg-[#fffbeb] text-[#92400e]'
+                    }`}>
+                      {flag.severity}
+                    </span>
+                    <p className="text-[13px] text-[#111116] font-medium">{flag.desc}</p>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* OPEN TASKS */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <h3 className="text-[11px] uppercase tracking-widest text-[#9090a0] font-medium">Open tasks</h3>
+              <span className="bg-[#f8f8fb] text-[#52525e] text-[11px] font-medium px-2 py-0.5 rounded-full">{pendingTasks.length}</span>
+            </div>
+            <div className="space-y-2">
+              {tests.length === 0 ? (
+                <p className="text-[13px] text-[#9090a0] italic">No tasks assigned</p>
+              ) : (
+                tests.map(task => {
+                  const isCompleted = task.status === 'completed';
+                  const isOverdue = !isCompleted && task.due_by && new Date(task.due_by) < new Date();
                   return (
-                    <div key={i} className="flex items-center gap-3 bg-gray-900 p-3 rounded border border-gray-800">
-                      <div className={`w-2 h-2 rounded-full ${bg} shrink-0`} />
-                      <div className="text-[13px] text-gray-300">{flag.desc}</div>
+                    <div key={task.id} className="bg-white border border-[#e4e4e9] rounded-xl shadow-sm p-4 flex items-center gap-4 group">
+                      <button 
+                        onClick={() => !isCompleted && completeTask(task.id)}
+                        className={`w-5 h-5 rounded border-2 transition-all flex items-center justify-center ${
+                          isCompleted ? 'bg-[#059669] border-[#059669]' : 'border-[#d1d1db] hover:border-[#4f6ef7]'
+                        }`}
+                      >
+                        {isCompleted && <span className="text-white text-[10px]">✓</span>}
+                      </button>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-[13px] font-medium truncate ${isCompleted ? 'text-[#9090a0] line-through' : 'text-[#111116]'}`}>
+                          {task.text}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="text-[11px] text-[#9090a0]">
+                          Due {task.due_by ? new Date(task.due_by).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'N/A'}
+                        </span>
+                        <span className="bg-[#f8f8fb] text-[#52525e] text-[11px] font-medium px-2 py-0.5 rounded-full">
+                          {task.assigned_to}
+                        </span>
+                        {isOverdue && !isCompleted && (
+                          <span className="bg-[#fef2f2] text-[#dc2626] text-[11px] font-medium px-2 py-0.5 rounded-full">Overdue</span>
+                        )}
+                      </div>
                     </div>
-                  )
+                  );
                 })
               )}
             </div>
           </div>
 
-          {/* SECTION 4: OPEN TASKS */}
-          <div>
-            <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
-              <span className="text-blue-500">☑</span> Open tasks
-            </h3>
-            {pendingTasks.length === 0 ? (
-              <div className="text-[13px] text-gray-500 italic">No open tasks</div>
-            ) : (
-              <div className="space-y-2">
-                {pendingTasks.map(task => {
-                  const isOverdue = task.due_by && new Date(task.due_by) < new Date()
-                  return (
-                    <div key={task.id} className="flex items-center gap-4 bg-gray-900 p-3 rounded border border-gray-800">
-                      <button 
-                        onClick={() => completeTask(task.id)}
-                        className="w-4 h-4 rounded border border-gray-500 flex items-center justify-center hover:bg-gray-700 transition shrink-0"
-                      />
-                      <div className="text-[13px] flex-1">{task.text}</div>
-                      <div className="text-[11px] text-gray-500">
-                        Due {task.due_by ? new Date(task.due_by).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'N/A'}
-                      </div>
-                      <div className="text-[11px] bg-gray-800 px-2 py-1 rounded-full text-gray-400">
-                        {task.assigned_to}
-                      </div>
-                      <div className={`text-[11px] px-2 py-1 rounded ${isOverdue ? 'bg-red-500/10 text-red-500' : 'bg-amber-500/10 text-amber-500'}`}>
-                        {isOverdue ? 'Overdue' : 'Pending'}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* SECTION 5: SESSION HISTORY */}
-          <div>
-            <h3 className="text-sm font-semibold mb-4">Session history</h3>
-            {sessions.length === 0 ? (
-              <div className="text-[13px] text-gray-500 italic">No sessions yet — start a new session</div>
-            ) : (
-              <div className="flex gap-4 overflow-x-auto pb-4">
-                {sessions.map(session => (
-                  <div 
-                    key={session.id} 
-                    onClick={() => session.status === 'draft' ? onSelectSession(session.id) : null}
-                    className={`min-w-[140px] bg-gray-900 p-4 rounded border border-gray-800 flex flex-col gap-2 shrink-0 ${session.status === 'draft' ? 'cursor-pointer hover:border-blue-500 transition' : ''}`}
-                  >
-                    <div className="font-semibold text-sm">Session {session.session_number}</div>
-                    <div className="text-[12px] text-gray-400">
-                      {session.session_date ? new Date(session.session_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A'}
-                    </div>
-                    <div className="text-[12px] text-gray-500">I Year I Sem</div>
-                    <div className={`text-[11px] w-fit px-2 py-0.5 rounded ${session.status === 'draft' ? 'bg-amber-500/20 text-amber-500' : 'bg-green-500/20 text-green-500'}`}>
-                      {session.status === 'draft' ? 'Draft' : 'Submitted'}
-                    </div>
+          {/* SESSION HISTORY */}
+          <div className="space-y-4">
+            <h3 className="text-[11px] uppercase tracking-widest text-[#9090a0] font-medium">Session history</h3>
+            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin">
+              {sessions.map(session => (
+                <div 
+                  key={session.id} 
+                  onClick={() => session.status === 'draft' ? onSelectSession(session.id) : null}
+                  className={`min-w-[180px] bg-white border border-[#e4e4e9] rounded-xl p-4 shadow-sm transition-all flex flex-col gap-2 ${
+                    session.status === 'draft' ? 'cursor-pointer hover:border-[#4f6ef7] ring-offset-2 hover:ring-2 hover:ring-[#4f6ef7]/10' : ''
+                  }`}
+                >
+                  <div className="text-[13px] font-bold text-[#111116]">Session {session.session_number}</div>
+                  <div className="text-[11px] text-[#9090a0]">
+                    {session.session_date ? new Date(session.session_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A'}
                   </div>
-                ))}
-              </div>
-            )}
+                  <div className={`mt-1 text-[11px] font-medium w-fit px-2 py-0.5 rounded-full ${
+                    session.status === 'draft' ? 'bg-[#fffbeb] text-[#92400e]' : 'bg-[#ecfdf5] text-[#065f46]'
+                  }`}>
+                    {session.status === 'draft' ? 'Draft' : 'Submitted'}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-
-          <hr className="border-gray-800 my-8" />
-          <div className="text-center text-[13px] text-gray-500 mb-4">Full diary record — expand sections below</div>
 
           {/* COLLAPSIBLE SECTIONS */}
-          <div className="space-y-2">
-            {/* 1. Identity & family details */}
-            <div className="border border-gray-800 rounded bg-gray-900 overflow-hidden">
-              <button onClick={() => toggleSection('identity')} className="w-full flex items-center justify-between p-4 hover:bg-gray-800/50 transition">
-                <span className="font-medium text-sm">Identity & family details</span>
-                <span className="text-gray-500 text-lg leading-none">{expandedSection === 'identity' ? 'ᐱ' : '⌄'}</span>
-              </button>
-              {expandedSection === 'identity' && (
-                <div className="p-4 pt-0 border-t border-gray-800 mt-2 text-[13px] grid grid-cols-2 gap-4 text-gray-300">
-                  <div><span className="text-gray-500 block mb-1">Blood group</span> {profileData?.blood_group || '—'}</div>
-                  <div><span className="text-gray-500 block mb-1">Mobile</span> {profileData?.mobile || '—'}</div>
-                  <div><span className="text-gray-500 block mb-1">Email</span> {selectedStudent.email || '—'}</div>
-                  <div><span className="text-gray-500 block mb-1">Address</span> {profileData?.address || '—'}</div>
-                  <div><span className="text-gray-500 block mb-1">Father name & occ.</span> {profileData?.father_name || '—'} ({profileData?.father_occupation || '—'})</div>
-                  <div><span className="text-gray-500 block mb-1">Mother name & occ.</span> {profileData?.mother_name || '—'} ({profileData?.mother_occupation || '—'})</div>
-                  <div className="col-span-2"><span className="text-gray-500 block mb-1">Admission Info</span> {profileData?.admission_quota || '—'} · {profileData?.admission_category || '—'} · Rank: {profileData?.eamcet_rank || '—'}</div>
+          <div className="space-y-3">
+            {[
+              { id: 'identity', label: 'Identity & family details', content: (
+                <div className="grid grid-cols-2 gap-x-12 gap-y-6">
+                  {[
+                    { label: 'Blood group', value: profileData?.blood_group },
+                    { label: 'Mobile', value: profileData?.mobile },
+                    { label: 'Email', value: selectedStudent.email },
+                    { label: 'Address', value: profileData?.address },
+                    { label: 'Father name & occ.', value: `${profileData?.father_name || '—'} (${profileData?.father_occupation || '—'})` },
+                    { label: 'Mother name & occ.', value: `${profileData?.mother_name || '—'} (${profileData?.mother_occupation || '—'})` },
+                  ].map((item, i) => (
+                    <div key={i}>
+                      <span className="text-[11px] text-[#9090a0] uppercase tracking-wider block mb-1">{item.label}</span>
+                      <span className="text-[13px] text-[#111116] font-medium">{item.value || '—'}</span>
+                    </div>
+                  ))}
                 </div>
-              )}
-            </div>
-
-            {/* 2. Full academic record */}
-            <div className="border border-gray-800 rounded bg-gray-900 overflow-hidden">
-              <button onClick={() => toggleSection('academic')} className="w-full flex items-center justify-between p-4 hover:bg-gray-800/50 transition">
-                <span className="font-medium text-sm">Full academic record</span>
-                <span className="text-gray-500 text-lg leading-none">{expandedSection === 'academic' ? 'ᐱ' : '⌄'}</span>
-              </button>
-              {expandedSection === 'academic' && (
-                <div className="p-4 pt-0 border-t border-gray-800 mt-2">
-                  <table className="w-full text-left text-[13px]">
-                    <thead>
-                      <tr className="text-gray-500 border-b border-gray-800">
-                        <th className="font-normal py-2">Year/Sem</th>
-                        <th className="font-normal py-2">SGPA</th>
-                        <th className="font-normal py-2">CGPA</th>
-                        <th className="font-normal py-2">Credits</th>
-                        <th className="font-normal py-2">Backlogs</th>
+              )},
+              { id: 'academic', label: 'Full academic record', content: (
+                <div className="overflow-hidden border border-[#e4e4e9] rounded-lg">
+                  <table className="w-full text-[13px] text-left">
+                    <thead className="bg-[#f8f8fb] text-[#52525e] border-b border-[#e4e4e9]">
+                      <tr>
+                        <th className="px-4 py-3 font-semibold">Year/Sem</th>
+                        <th className="px-4 py-3 font-semibold">SGPA</th>
+                        <th className="px-4 py-3 font-semibold">CGPA</th>
+                        <th className="px-4 py-3 font-semibold">Credits</th>
+                        <th className="px-4 py-3 font-semibold">Backlogs</th>
                       </tr>
                     </thead>
-                    <tbody>
-                      {semRecords.map((r, idx) => {
-                        const prevR = idx > 0 ? semRecords[idx - 1] : null
-                        const cgpaDrop = prevR?.cgpa != null && r.cgpa != null && r.cgpa - prevR.cgpa < -0.3
-                        return (
-                          <tr key={r.id} className="border-b border-gray-800/50 last:border-0 text-gray-300">
-                            <td className="py-2">{r.year} Year {r.semester} Sem</td>
-                            <td className="py-2">{r.sgpa ?? <span className="text-gray-600">—</span>}</td>
-                            <td className={`py-2 ${cgpaDrop ? 'text-amber-500' : ''}`}>{r.cgpa ?? <span className="text-gray-600">—</span>}</td>
-                            <td className="py-2">{r.credits_earned ?? <span className="text-gray-600">—</span>}</td>
-                            <td className={`py-2 ${r.backlogs > 0 ? 'text-red-500' : ''}`}>{r.backlogs ?? <span className="text-gray-600">—</span>}</td>
-                          </tr>
-                        )
-                      })}
-                      {semRecords.length === 0 && (
-                        <tr><td colSpan={5} className="py-4 text-center text-gray-500">No records found</td></tr>
-                      )}
+                    <tbody className="divide-y divide-[#e4e4e9]">
+                      {semRecords.map((r, idx) => (
+                        <tr key={idx} className="hover:bg-[#f8f8fb] transition-colors">
+                          <td className="px-4 py-3 font-medium">{r.year} Year {r.semester} Sem</td>
+                          <td className="px-4 py-3">{r.sgpa ?? '—'}</td>
+                          <td className="px-4 py-3 font-semibold">{r.cgpa ?? '—'}</td>
+                          <td className="px-4 py-3">{r.credits_earned ?? '—'}</td>
+                          <td className="px-4 py-3">
+                            <span className={r.backlogs > 0 ? 'text-[#dc2626] font-semibold' : 'text-[#059669]'}>
+                              {r.backlogs ?? 0}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
-              )}
-            </div>
-
-            {/* 3. Goals & self-assessment */}
-            <div className="border border-gray-800 rounded bg-gray-900 overflow-hidden">
-              <button onClick={() => toggleSection('goals')} className="w-full flex items-center justify-between p-4 hover:bg-gray-800/50 transition">
-                <span className="font-medium text-sm">Goals & self-assessment</span>
-                <span className="text-gray-500 text-lg leading-none">{expandedSection === 'goals' ? 'ᐱ' : '⌄'}</span>
-              </button>
-              {expandedSection === 'goals' && (
-                <div className="p-4 pt-4 border-t border-gray-800 text-[13px] text-gray-300 space-y-4">
-                  {!profileData?.goals && !profileData?.self_assessment ? (
-                    <div className="text-gray-500 italic">Not filled yet</div>
-                  ) : (
-                    <>
-                      <div>
-                        <div className="text-gray-500 mb-1">Academic Goal</div>
-                        <div>{profileData?.goals?.academic || '—'}</div>
-                      </div>
-                      <div>
-                        <div className="text-gray-500 mb-1">Personal Goal</div>
-                        <div>{profileData?.goals?.personal || '—'}</div>
-                      </div>
-                      <div>
-                        <div className="text-gray-500 mb-2">Career Qualities</div>
-                        <div className="flex flex-wrap gap-2">
-                          {profileData?.self_assessment?.qualities?.map((q: string, i: number) => (
-                            <span key={i} className="px-2 py-1 bg-gray-800 rounded text-xs">{q}</span>
-                          )) || '—'}
-                        </div>
-                      </div>
-                    </>
-                  )}
+              )},
+              { id: 'goals', label: 'Goals & self-assessment', content: (
+                <div className="space-y-6">
+                  <div>
+                    <span className="text-[11px] text-[#9090a0] uppercase tracking-wider block mb-2">Academic Goal</span>
+                    <p className="text-[13px] text-[#111116] bg-[#f8f8fb] p-3 rounded-lg border border-[#e4e4e9] leading-relaxed">
+                      {profileData?.goals?.academic || 'Not specified'}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-[11px] text-[#9090a0] uppercase tracking-wider block mb-2">Personal Goal</span>
+                    <p className="text-[13px] text-[#111116] bg-[#f8f8fb] p-3 rounded-lg border border-[#e4e4e9] leading-relaxed">
+                      {profileData?.goals?.personal || 'Not specified'}
+                    </p>
+                  </div>
                 </div>
               )}
-            </div>
-
-            {/* 4. Psychometric test results */}
-            <div className="border border-gray-800 rounded bg-gray-900 overflow-hidden">
-              <button onClick={() => toggleSection('psych')} className="w-full flex items-center justify-between p-4 hover:bg-gray-800/50 transition">
-                <span className="font-medium text-sm">Psychometric test results</span>
-                <span className="text-gray-500 text-lg leading-none">{expandedSection === 'psych' ? 'ᐱ' : '⌄'}</span>
-              </button>
-              {expandedSection === 'psych' && (
-                <div className="p-4 pt-4 border-t border-gray-800 text-[13px] text-gray-300">
-                  {!profileData?.psychometric_test ? (
-                    <div className="text-gray-500 italic">Not completed yet</div>
-                  ) : (
-                    <div className="space-y-4">
-                      {Object.entries(
-                        profileData.psychometric_test.reduce((acc: any, r: any) => {
-                          if (!acc[r.aspect_category]) acc[r.aspect_category] = { yes: 0, no: 0 }
-                          if (r.response === 'Yes') acc[r.aspect_category].yes++
-                          else acc[r.aspect_category].no++
-                          return acc
-                        }, {})
-                      ).map(([category, counts]: any) => (
-                        <div key={category} className="flex items-center justify-between">
-                          <span className="font-medium">{category}</span>
-                          <span className="text-gray-500 text-xs">Yes: {counts.yes} / No: {counts.no}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* 5. General counselling responses */}
-            <div className="border border-gray-800 rounded bg-gray-900 overflow-hidden">
-              <button onClick={() => toggleSection('counselling')} className="w-full flex items-center justify-between p-4 hover:bg-gray-800/50 transition">
-                <span className="font-medium text-sm">General counselling responses</span>
-                <span className="text-gray-500 text-lg leading-none">{expandedSection === 'counselling' ? 'ᐱ' : '⌄'}</span>
-              </button>
-              {expandedSection === 'counselling' && (
-                <div className="p-4 pt-4 border-t border-gray-800 text-[13px] text-gray-300">
-                  {!profileData?.general_onboarding_responses ? (
-                    <div className="text-gray-500 italic">Not filled yet</div>
-                  ) : (
-                    <div className="grid grid-cols-2 gap-4">
-                      {Object.entries(profileData.general_onboarding_responses).map(([k, v]) => (
-                        <div key={k}>
-                          <span className="text-gray-500 block mb-1 capitalize">{k.replace(/_/g, ' ')}</span>
-                          <span>{String(v)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* 6. Co-curricular & portfolio */}
-            <div className="border border-gray-800 rounded bg-gray-900 overflow-hidden">
-              <button onClick={() => toggleSection('cocurricular')} className="w-full flex items-center justify-between p-4 hover:bg-gray-800/50 transition">
-                <span className="font-medium text-sm">Co-curricular & portfolio</span>
-                <span className="text-gray-500 text-lg leading-none">{expandedSection === 'cocurricular' ? 'ᐱ' : '⌄'}</span>
-              </button>
-              {expandedSection === 'cocurricular' && (
-                <div className="p-4 pt-4 border-t border-gray-800 text-[13px] text-gray-300 space-y-4">
-                  {(() => {
-                    const activities = sessions.flatMap(s => s.structured_input?.cocurricular_activities_this_session || [])
-                    if (activities.length === 0) {
-                      return <div className="text-amber-500 italic">No activity recorded this semester</div>
-                    }
-                    return (
-                      <ul className="list-disc pl-4 space-y-1">
-                        {activities.map((act: string, i: number) => (
-                          <li key={i}>{act}</li>
-                        ))}
-                      </ul>
-                    )
-                  })()}
-                </div>
-              )}
-            </div>
+            ].map(section => (
+              <div key={section.id} className="bg-white border border-[#e4e4e9] rounded-xl shadow-sm overflow-hidden">
+                <button 
+                  onClick={() => toggleSection(section.id)}
+                  className="w-full flex items-center justify-between p-5 hover:bg-[#f8f8fb] transition-all"
+                >
+                  <span className="text-[14px] font-semibold text-[#111116]">{section.label}</span>
+                  <span className={`text-[#9090a0] transition-transform ${expandedSection === section.id ? 'rotate-180' : ''}`}>
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 10 13 14 9"></polyline></svg>
+                  </span>
+                </button>
+                {expandedSection === section.id && (
+                  <div className="p-6 border-t border-[#e4e4e9] bg-white animate-in slide-in-from-top-1 duration-200">
+                    {section.content}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* EXPORT FOOTER */}
-      <div className="absolute bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 p-4 flex items-center justify-between px-8 z-10 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
-        <div className="text-[13px] text-gray-400">
-          Export generates a full 4-year PDF of the mentoring diary
-        </div>
+      {/* STICKY BOTTOM BAR */}
+      <div className="bg-white border-t border-[#e4e4e9] p-4 flex items-center justify-between px-8 shadow-[0_-1px_3px_rgba(0,0,0,0.06)] shrink-0">
+        <p className="text-[13px] text-[#52525e]">Mentoring Diary Record &middot; Full History</p>
         <button 
           onClick={handleExport}
-          disabled={exporting}
-          className="px-4 py-2 text-sm font-medium bg-gray-800 hover:bg-gray-700 text-white rounded transition flex items-center gap-2 border border-gray-700"
+          className="bg-white border border-[#d1d1db] hover:bg-[#f8f8fb] text-[#111116] rounded-lg px-4 py-2 text-[13px] font-medium transition-all"
         >
-          {exporting ? (
-            <>
-              <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-              Exporting...
-            </>
-          ) : `Export full diary — ${selectedStudent.name}`}
+          {exporting ? 'Generating PDF...' : 'Download Full Record'}
         </button>
       </div>
     </div>

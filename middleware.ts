@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createServerClient } from '@supabase/ssr'
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -10,7 +10,30 @@ export async function middleware(request: NextRequest) {
   }
 
   // Get Supabase client for middleware
-  const supabase = await createClient()
+  let supabaseResponse = NextResponse.next({
+    request,
+  })
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet: any[]) {
+          cookiesToSet.forEach(({ name, value, options }: any) => request.cookies.set(name, value))
+          supabaseResponse = NextResponse.next({
+            request,
+          })
+          cookiesToSet.forEach(({ name, value, options }: any) =>
+            supabaseResponse.cookies.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
 
   // Get the current user
   const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -54,7 +77,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Allow access if role matches
-  return NextResponse.next()
+  return supabaseResponse
 }
 
 export const config = {
