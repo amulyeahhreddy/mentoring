@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { detectClaims } from '@/lib/utils/detectClaims'
+import { InsightContext } from '@/lib/types/insightContext'
 
 interface Question {
   id: string
@@ -44,8 +46,9 @@ export default function ValidateMode({
   const [presessionError, setPresessionError] = useState(false)
   const [insightsCollapsed, setInsightsCollapsed] = useState(false)
   const [prevSessionOutput, setPrevSessionOutput] = useState<any | null>(null)
-  const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
+  const [semRecords, setSemRecords] = useState<any[]>([])
+  const [pendingTasks, setPendingTasks] = useState<any[]>([])
 
   // --- REFS ---
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
@@ -106,6 +109,9 @@ export default function ValidateMode({
         supabase.from('sessions').select('*').eq('student_id', selectedStudent.id).neq('id', activeSessionId).order('session_date', { ascending: false }).limit(1).maybeSingle(),
         supabase.from('pre_session_insights').select('*').eq('student_id', selectedStudent.id).order('generated_at', { ascending: false }).limit(1).maybeSingle()
       ])
+
+      setSemRecords(semRecords || [])
+      setPendingTasks(pendingTasks || [])
 
       const prev_suggested = prevSession?.ai_output?.suggested_questions || []
       const carry_forward = psi?.insights?.questions?.filter((q: any) => !q.checked) || []
@@ -353,6 +359,26 @@ export default function ValidateMode({
     return <span className="text-[#8b8b9e] ml-1">— unchanged</span>
   }
 
+  // --- BUILD INSIGHT CONTEXT ---
+  const ctx: InsightContext = {
+    subject_stats: [],
+    sgpa_history: semRecords.map(r => ({ semester: r.semester, sgpa: r.sgpa })),
+    active_backlogs: [],
+    cleared_backlogs: [],
+    overall_attendance: null,
+    attendance_trend: null,
+    last_month_attendance: null,
+    low_attendance_subjects: [],
+    overdue_tasks: pendingTasks.map(t => ({ task: t.text, due_by: t.due_by })),
+    task_completion_history: [],
+    total_tasks_assigned: 0,
+    total_tasks_completed: 0,
+    tone_history: prevSessionOutput?.emotional_behavioral?.overall_tone ? [prevSessionOutput.emotional_behavioral.overall_tone] : [],
+    engagement_history: prevSessionOutput?.emotional_behavioral?.engagement_level ? [prevSessionOutput.emotional_behavioral.engagement_level] : [],
+    goals: [],
+    recurring_risk_flags: []
+  }
+
   // --- RENDER ---
   return (
     <div className="flex flex-col h-full bg-[#f4f4f6] text-[#111116] font-sans overflow-hidden">
@@ -418,7 +444,7 @@ export default function ValidateMode({
                               <div className={`text-[13px] font-bold leading-snug ${q.checked ? 'text-[#9090a0]' : 'text-[#111116]'}`}>
                                 {q.text}
                               </div>
-                              <div className="text-[11px] text-[#9090a0] mt-1 font-medium">{q.reason}</div>
+                              <div className="text-[11px] text-[#9090a0] mt-1 font-medium">{detectClaims(q.reason, ctx)}</div>
                             </div>
                           </div>
                         ))
@@ -642,7 +668,7 @@ export default function ValidateMode({
                             </span>
                             <span className="text-[13px] font-black text-[#111116]">{p.label}</span>
                           </div>
-                          <p className="text-[12px] text-[#52525e] leading-relaxed font-medium">{p.description}</p>
+                          <p className="text-[12px] text-[#52525e] leading-relaxed font-medium">{detectClaims(p.description, ctx)}</p>
                         </div>
                       ))}
                     </div>
@@ -658,7 +684,7 @@ export default function ValidateMode({
                     </div>
                     <div className="p-8 space-y-8">
                       <div className="p-5 bg-[#f4f4f6]/50 border border-[#e4e4e9] rounded-2xl">
-                        <p className="text-[14px] text-[#111116] leading-relaxed font-medium italic">"{editedOutput.decisions?.narrative}"</p>
+                        <p className="text-[14px] text-[#111116] leading-relaxed font-medium italic">"{detectClaims(editedOutput.decisions?.narrative || '', ctx)}"</p>
                       </div>
 
                       <div className="space-y-4">
@@ -698,7 +724,7 @@ export default function ValidateMode({
                                 <span className="text-[10px] font-black bg-red-600 text-white px-2 py-1 rounded uppercase">{flag.severity}</span>
                                 <span className="text-[14px] font-black text-[#111116]">{flag.flag_code}</span>
                               </div>
-                              <p className="text-[13px] text-[#52525e] leading-relaxed">{flag.description}</p>
+                              <p className="text-[13px] text-[#52525e] leading-relaxed">{detectClaims(flag.description, ctx)}</p>
                               <div className="pt-2 border-t border-red-100">
                                 <span className="text-[10px] font-black text-[#059669] uppercase tracking-widest">Recommended: </span>
                                 <span className="text-[13px] font-bold text-[#059669]">{flag.recommended_action}</span>

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { detectClaims } from '@/lib/utils/detectClaims'
+import { InsightContext } from '@/lib/types/insightContext'
 
 interface BriefingModeProps {
   selectedStudent: any;
@@ -18,6 +20,7 @@ export default function BriefingMode({ selectedStudent, mentorId, onNewSession, 
   const [profileData, setProfileData] = useState<any>(null)
   const [exporting, setExporting] = useState(false)
   const [expandedSection, setExpandedSection] = useState<string | null>(null)
+  const [expandedSession, setExpandedSession] = useState<string | null>(null)
 
   const supabase = createClient()
 
@@ -179,6 +182,41 @@ export default function BriefingMode({ selectedStudent, mentorId, onNewSession, 
     return (name[0] + (name[1] || '')).toUpperCase()
   }
 
+  const ctx: InsightContext = {
+    subject_stats: [],
+    sgpa_history: semRecords.map(r => ({ semester: r.semester, sgpa: r.sgpa })),
+    active_backlogs: latestRecord?.backlogs > 0 
+      ? [{ subject: `${latestRecord.backlogs} Active backlogs`, semester: latestRecord.semester }] 
+      : [],
+    cleared_backlogs: [],
+    overall_attendance: latestAttendance,
+    attendance_trend: attendanceTrend.text.includes('Down') ? 'declining' : attendanceTrend.text.includes('Up') ? 'improving' : 'stable',
+    last_month_attendance: fortnightlyRecords.length > 0 
+      ? fortnightlyRecords[fortnightlyRecords.length - 1]?.percentage 
+      : null,
+    low_attendance_subjects: [],
+    overdue_tasks: overdueTasks.map(t => ({ task: t.text, due_by: t.due_by })),
+    task_completion_history: [
+      tests.length > 0 ? (tests.filter(t => t.status === 'completed').length / tests.length) * 100 : 0
+    ],
+    total_tasks_assigned: tests.length,
+    total_tasks_completed: tests.filter(t => t.status === 'completed').length,
+    tone_history: sessions.slice(0, 4).map(s => s.ai_output?.emotional_behavioral?.overall_tone).filter(Boolean).reverse(),
+    engagement_history: sessions.slice(0, 4).map(s => s.ai_output?.emotional_behavioral?.engagement_level).filter(Boolean).reverse(),
+    goals: [
+      profileData?.goals?.academic ? { title: `Academic: ${profileData.goals.academic}`, related_subjects: [], prerequisite_gaps: [] } : null,
+      profileData?.goals?.personal ? { title: `Personal: ${profileData.goals.personal}`, related_subjects: [], prerequisite_gaps: [] } : null
+    ].filter(Boolean) as any[],
+    recurring_risk_flags: flags.map(f => ({
+      flag_code: 'RISK',
+      description: f.desc,
+      severity: f.severity,
+      occurrence_count: 1,
+      first_seen: '',
+      resolved: false
+    }))
+  }
+
   return (
     <div className="flex flex-col h-full bg-[#f4f4f6] text-[#111116] relative font-sans overflow-hidden">
       <div className="flex-1 overflow-y-auto pb-24">
@@ -314,26 +352,99 @@ export default function BriefingMode({ selectedStudent, mentorId, onNewSession, 
           {/* SESSION HISTORY */}
           <div className="space-y-4">
             <h3 className="text-[11px] uppercase tracking-widest text-[#9090a0] font-medium">Session history</h3>
-            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin">
-              {sessions.map(session => (
-                <div 
-                  key={session.id} 
-                  onClick={() => session.status === 'draft' ? onSelectSession(session.id) : null}
-                  className={`min-w-[180px] bg-white border border-[#e4e4e9] rounded-xl p-4 shadow-sm transition-all flex flex-col gap-2 ${
-                    session.status === 'draft' ? 'cursor-pointer hover:border-[#4f6ef7] ring-offset-2 hover:ring-2 hover:ring-[#4f6ef7]/10' : ''
-                  }`}
-                >
-                  <div className="text-[13px] font-bold text-[#111116]">Session {session.session_number}</div>
-                  <div className="text-[11px] text-[#9090a0]">
-                    {session.session_date ? new Date(session.session_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A'}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {sessions.map(session => {
+                const isExpanded = expandedSession === session.id;
+                const duration = session.structured_input?.session_info?.duration_minutes;
+                const category = session.structured_input?.session_info?.session_category;
+                const summary = session.ai_output?.summary || '';
+                const displaySummary = summary.length > 200 ? summary.substring(0, 200) + '...' : summary;
+                const academicConcerns = (session.structured_input?.discussion?.academic_concerns || []).slice(0, 2);
+                const personalConcerns = (session.structured_input?.discussion?.personal_concerns || []).slice(0, 1);
+                const allConcerns = [...academicConcerns, ...personalConcerns];
+                const sentiment = session.ai_output?.student_state?.sentiment?.toLowerCase();
+                const taskCount = tests.filter(t => t.session_id === session.id).length;
+
+                return (
+                  <div 
+                    key={session.id} 
+                    onClick={() => setExpandedSession(isExpanded ? null : session.id)}
+                    className={`bg-white border border-[#e4e4e9] rounded-xl p-5 shadow-sm transition-all flex flex-col gap-3 cursor-pointer hover:border-[#4f6ef7] ${
+                      isExpanded ? 'col-span-1 md:col-span-2 lg:col-span-3' : ''
+                    }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[14px] font-bold text-[#111116]">Session {session.session_number}</span>
+                          {sentiment && (
+                            <div className={`w-2 h-2 rounded-full ${sentiment.includes('pos') ? 'bg-[#059669]' : sentiment.includes('neg') ? 'bg-[#dc2626]' : 'bg-[#d97706]'}`} title={`Sentiment: ${sentiment}`} />
+                          )}
+                        </div>
+                        <div className="text-[12px] text-[#9090a0]">
+                          {session.session_date ? new Date(session.session_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A'}
+                        </div>
+                      </div>
+                      <div className={`text-[11px] font-medium px-2.5 py-1 rounded-full ${
+                        session.status === 'draft' ? 'bg-[#fffbeb] text-[#92400e]' : 'bg-[#ecfdf5] text-[#065f46]'
+                      }`}>
+                        {session.status === 'draft' ? 'Draft' : 'Submitted'}
+                      </div>
+                    </div>
+
+                    {isExpanded && (
+                      <div className="mt-2 pt-4 border-t border-[#e4e4e9] space-y-4 animate-in fade-in slide-in-from-top-2">
+                        <div className="flex gap-6">
+                          <div>
+                            <span className="text-[10px] uppercase tracking-widest text-[#9090a0] font-bold block mb-1">Duration</span>
+                            <span className="text-[13px] text-[#111116] font-medium">{duration ? `${duration} min` : '—'}</span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] uppercase tracking-widest text-[#9090a0] font-bold block mb-1">Category</span>
+                            <span className="text-[13px] text-[#111116] font-medium capitalize">{category || '—'}</span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] uppercase tracking-widest text-[#9090a0] font-bold block mb-1">Tasks Assigned</span>
+                            <span className="text-[13px] text-[#111116] font-medium">{taskCount}</span>
+                          </div>
+                        </div>
+
+                        {displaySummary && (
+                          <div>
+                            <span className="text-[10px] uppercase tracking-widest text-[#9090a0] font-bold block mb-1">Summary</span>
+                            <p className="text-[13px] text-[#52525e] leading-relaxed">{displaySummary}</p>
+                          </div>
+                        )}
+
+                        {allConcerns.length > 0 && (
+                          <div>
+                            <span className="text-[10px] uppercase tracking-widest text-[#9090a0] font-bold block mb-2">Key Concerns</span>
+                            <ul className="list-disc list-inside text-[13px] text-[#52525e] space-y-1">
+                              {allConcerns.map((c, i) => (
+                                <li key={i}>{c}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {session.status === 'draft' && (
+                          <div className="pt-2">
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onSelectSession(session.id);
+                              }}
+                              className="text-[13px] font-bold text-[#4f6ef7] hover:underline flex items-center gap-1"
+                            >
+                              Resume session &rarr;
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <div className={`mt-1 text-[11px] font-medium w-fit px-2 py-0.5 rounded-full ${
-                    session.status === 'draft' ? 'bg-[#fffbeb] text-[#92400e]' : 'bg-[#ecfdf5] text-[#065f46]'
-                  }`}>
-                    {session.status === 'draft' ? 'Draft' : 'Submitted'}
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
 
@@ -392,13 +503,13 @@ export default function BriefingMode({ selectedStudent, mentorId, onNewSession, 
                   <div>
                     <span className="text-[11px] text-[#9090a0] uppercase tracking-wider block mb-2">Academic Goal</span>
                     <p className="text-[13px] text-[#111116] bg-[#f8f8fb] p-3 rounded-lg border border-[#e4e4e9] leading-relaxed">
-                      {profileData?.goals?.academic || 'Not specified'}
+                      {profileData?.goals?.academic ? detectClaims(profileData.goals.academic, ctx) : 'Not specified'}
                     </p>
                   </div>
                   <div>
                     <span className="text-[11px] text-[#9090a0] uppercase tracking-wider block mb-2">Personal Goal</span>
                     <p className="text-[13px] text-[#111116] bg-[#f8f8fb] p-3 rounded-lg border border-[#e4e4e9] leading-relaxed">
-                      {profileData?.goals?.personal || 'Not specified'}
+                      {profileData?.goals?.personal ? detectClaims(profileData.goals.personal, ctx) : 'Not specified'}
                     </p>
                   </div>
                 </div>
