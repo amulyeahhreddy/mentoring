@@ -14,9 +14,8 @@ export async function GET(request: NextRequest) {
     
     const { data: sessions } = await adminClient
       .from('sessions')
-      .select('id, session_date, session_label, session_number, status, structured_input, ai_output')
+      .select('id, session_date, session_label, session_number, status, session_status, structured_input, ai_output, mentor_signed_off_at, student_acknowledged_at, coordinator_approved_at')
       .eq('student_id', student_id)
-      .eq('status', 'completed')
       .order('session_date', { ascending: false })
       
     return NextResponse.json({ sessions: sessions || [] })

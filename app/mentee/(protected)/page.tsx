@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { 
   CheckCircle, 
@@ -18,8 +19,21 @@ import {
   AlertCircle,
   Edit2,
   X,
-  Save
+  Save,
+  FileText,
+  BookOpen,
+  Activity,
 } from 'lucide-react'
+import { getSessionStatusBadge } from '@/lib/session-utils'
+
+const QUICK_LINKS = [
+  { label: 'Pre-Admission History', href: (id: string) => `/mentee/${id}/pre-admission`, icon: History, color: 'text-[#4f6ef7]', bg: 'bg-[#eef1fe]' },
+  { label: 'Initial Questionnaire', href: (id: string) => `/mentee/${id}/questionnaire`, icon: FileText, color: 'text-[#7c3aed]', bg: 'bg-[#f3e8ff]' },
+  { label: 'Goals Declaration', href: (id: string) => `/mentee/${id}/goals`, icon: Target, color: 'text-[#059669]', bg: 'bg-[#ecfdf5]' },
+  { label: 'Backlogs', href: (id: string) => `/mentee/${id}/backlogs`, icon: AlertCircle, color: 'text-[#dc2626]', bg: 'bg-[#fef2f2]' },
+  { label: 'Portfolio', href: (id: string) => `/mentee/${id}/portfolio/${encodeURIComponent('I Year I Sem')}`, icon: BookOpen, color: 'text-[#d97706]', bg: 'bg-[#fffbeb]' },
+  { label: 'Psychometric Tests', href: (id: string) => `/mentee/${id}/psychometric/1`, icon: Activity, color: 'text-[#e11d48]', bg: 'bg-[#fff1f2]' },
+] as const
 
 // Types
 interface DashboardData {
@@ -36,6 +50,7 @@ interface Task {
   assigned_to: string
   status: string
   created_at: string
+  session_id?: string | null
 }
 
 interface Session {
@@ -43,6 +58,8 @@ interface Session {
   session_date: string
   session_label: string
   session_number: number
+  session_status?: string
+  status?: string
   structured_input: any
   ai_output: any
 }
@@ -102,9 +119,8 @@ export default function MenteeDashboard() {
       setCgpaRecords(cgpaRes.data || [])
       setSubjectMarks(marksRes.data || [])
 
-      // Get profile name for UI
-      const { data: profileName } = await supabase.from('profiles').select('full_name').eq('id', uid).single()
-      setUserName(profileName?.full_name || 'Student')
+      const { data: profileName } = await supabase.from('profiles').select('name').eq('id', uid).single()
+      setUserName(profileName?.name || 'Student')
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
@@ -215,10 +231,12 @@ export default function MenteeDashboard() {
 
   const renderAttendanceChart = () => {
     const attendanceData = sessions
-      .map(s => s.structured_input?.fortnightly_records)
+      .map(s => s.structured_input?.mentor?.attendance?.fortnightly_records 
+        || s.structured_input?.attendance?.fortnightly_records
+        || s.structured_input?.fortnightly_records)
       .filter(Boolean)
       .flat()
-      .sort((a, b) => a.fortnight_number - b.fortnight_number)
+      .sort((a: any, b: any) => (a.fortnight_number || 0) - (b.fortnight_number || 0))
 
     if (attendanceData.length === 0) return <p className="text-[#9090a0] text-center py-8">No attendance records yet</p>
 
@@ -334,7 +352,7 @@ export default function MenteeDashboard() {
 
         <div className="p-8">
           {/* Stats Row */}
-          <div className="grid grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-3 gap-4 mb-6">
             <div className="bg-white border border-[#e4e4e9] rounded-xl p-6 shadow-sm">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[#9090a0] text-xs font-medium uppercase tracking-wider">Current CGPA</span>
@@ -358,18 +376,28 @@ export default function MenteeDashboard() {
               </div>
               <div className="text-2xl font-bold text-[#111116]">{dashboardData?.completed_session_count || 0}</div>
             </div>
-            <div className="bg-white border border-[#e4e4e9] rounded-xl p-6 shadow-sm">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[#9090a0] text-xs font-medium uppercase tracking-wider">Last Session</span>
-                <Calendar className="text-[#7c3aed]" size={20} />
-              </div>
-              <div className="text-lg font-bold text-[#111116] truncate">
-                {dashboardData?.last_session?.session_date 
-                  ? new Date(dashboardData.last_session.session_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) 
-                  : 'None yet'}
-              </div>
-            </div>
           </div>
+
+          {/* Quick Links */}
+          {userId && (
+            <section className="mb-6">
+              <h2 className="text-[#111116] font-bold text-lg mb-4">Quick Links</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {QUICK_LINKS.map((link) => (
+                  <Link
+                    key={link.label}
+                    href={link.href(userId)}
+                    className="flex items-center gap-4 p-4 rounded-xl border border-[#e4e4e9] bg-white hover:bg-[#fcfcfd] transition-colors shadow-sm group"
+                  >
+                    <div className={`p-3 rounded-lg ${link.bg} ${link.color} group-hover:scale-105 transition-transform`}>
+                      <link.icon className="w-5 h-5" />
+                    </div>
+                    <span className="font-semibold text-[#111116] text-sm">{link.label}</span>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Last Session Detail Card */}
           {dashboardData?.last_session && (
@@ -406,29 +434,7 @@ export default function MenteeDashboard() {
             </div>
           )}
 
-          {/* Tabs Navigation */}
-          <div className="mb-6">
-            <div className="bg-[#e4e4e9]/50 p-1 rounded-xl border border-[#e4e4e9] inline-flex gap-1">
-              {[
-                { id: 'tasks', label: 'Tasks' },
-                { id: 'history', label: 'History' },
-                { id: 'progress', label: 'Progress' },
-                { id: 'goals', label: 'Goals' },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
-                    activeTab === tab.id
-                      ? 'bg-white text-[#111116] shadow-sm'
-                      : 'text-[#9090a0] hover:text-[#111116]'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </div>
+
 
           {/* Tab Content */}
           <div className="space-y-4">
@@ -450,7 +456,14 @@ export default function MenteeDashboard() {
                           <p className="text-[#111116] text-sm font-medium">{task.text}</p>
                           <div className="flex items-center gap-3">
                             {task.due_by && (
-                              <span className="text-[#9090a0] text-xs">Due: {new Date(task.due_by).toLocaleDateString()}</span>
+                              <span className={`text-xs ${new Date(task.due_by) < new Date() && task.status !== 'completed' ? 'text-[#dc2626]' : 'text-[#9090a0]'}`}>
+                                Due: {new Date(task.due_by).toLocaleDateString()}
+                              </span>
+                            )}
+                            {task.due_by && new Date(task.due_by) < new Date() && task.status !== 'completed' && (
+                              <span className="bg-[#fef2f2] text-[#dc2626] text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wide">
+                                Overdue
+                              </span>
                             )}
                             {task.assigned_to !== 'student' && (
                               <span className="bg-[#eef1fe] text-[#4f6ef7] text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wide">
@@ -475,19 +488,27 @@ export default function MenteeDashboard() {
             {activeTab === 'history' && (
               <div>
                 <h2 className="text-[#111116] font-bold text-lg mb-4">Session History</h2>
+                {sessions.some((s) => (s.session_status || s.status) === 'mentor_review') && (
+                  <div className="bg-[#eef1fe] border border-[#c7d2fe] rounded-xl p-4 mb-4 text-[13px] text-[#3548c9]">
+                    You have session(s) waiting for your review and acknowledgement. Open a session below to acknowledge.
+                  </div>
+                )}
                 {sessions.length === 0 ? (
                   <div className="bg-white border border-[#e4e4e9] rounded-xl p-12 text-center shadow-sm text-[#9090a0]">
                     No sessions yet
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {sessions.map((session) => (
+                    {sessions.map((session) => {
+                      const statusBadge = getSessionStatusBadge(session)
+                      const needsAck = (session.session_status || session.status) === 'mentor_review'
+                      return (
                       <div key={session.id} className="bg-white border border-[#e4e4e9] rounded-xl overflow-hidden shadow-sm">
                         <button
                           onClick={() => toggleSession(session.id)}
                           className="w-full px-4 py-4 flex items-center justify-between hover:bg-[#fcfcfd] transition-colors"
                         >
-                          <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-4 flex-wrap">
                             <span className="font-bold text-[#111116] text-sm">
                               {session.session_label || `Session ${session.session_number}`}
                             </span>
@@ -496,6 +517,9 @@ export default function MenteeDashboard() {
                             </span>
                             <span className="bg-[#f8f8fb] text-[#9090a0] text-[10px] px-2 py-0.5 rounded font-black uppercase tracking-widest">
                               #{session.session_number}
+                            </span>
+                            <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${statusBadge.className}`}>
+                              {statusBadge.label}
                             </span>
                           </div>
                           {expandedSessions.has(session.id) ? <ChevronDown size={18} className="text-[#9090a0]" /> : <ChevronRight size={18} className="text-[#9090a0]" />}
@@ -520,20 +544,28 @@ export default function MenteeDashboard() {
                               </div>
                             )}
                             {/* Tasks from this session */}
-                            {tasks.filter(t => t.id === session.id).length > 0 && (
+                            {tasks.filter(t => t.session_id === session.id).length > 0 && (
                               <div>
                                 <h4 className="text-[11px] font-black text-[#9090a0] uppercase tracking-widest mb-1">Tasks Assigned</h4>
                                 <ul className="list-disc list-inside space-y-1">
-                                  {tasks.filter(t => t.id === session.id).map(t => (
+                                  {tasks.filter(t => t.session_id === session.id).map(t => (
                                     <li key={t.id} className="text-sm text-[#52525e]">{t.text}</li>
                                   ))}
                                 </ul>
                               </div>
                             )}
+                            <Link
+                              href={`/session/${session.id}`}
+                              className={`inline-flex text-[13px] font-bold hover:underline ${
+                                needsAck ? 'text-[#059669]' : 'text-[#4f6ef7]'
+                              }`}
+                            >
+                              {needsAck ? 'Review & acknowledge session →' : 'View full session →'}
+                            </Link>
                           </div>
                         )}
                       </div>
-                    ))}
+                    )})}
                   </div>
                 )}
               </div>
@@ -709,7 +741,7 @@ export default function MenteeDashboard() {
                       </h3>
                       {isEditingGoals ? (
                         <div className="space-y-3">
-                          {[0, 1].map((idx) => (
+                          {Array.from({ length: Math.min(4, Math.max(2, (editedGoals.college_year?.length || 0) + 1)) }).map((_, idx) => (
                             <input 
                               key={idx}
                               type="text"

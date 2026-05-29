@@ -274,11 +274,40 @@ Output Schema:
     try {
       parsedInsights = JSON.parse(cleanedResponse);
     } catch (parseError) {
-      console.error('JSON parse error:', parseError);
-      console.error('Response was:', cleanedResponse);
-      return NextResponse.json({ 
-        error: 'Failed to parse AI insights as JSON' 
-      }, { status: 500 });
+      console.error('Initial JSON parse failed, attempting repair:', parseError);
+      
+      // Attempt 1: Fix unclosed arrays and objects by counting brackets
+      try {
+        let repaired = cleanedResponse;
+        
+        // Count unclosed brackets
+        const openCurly = (repaired.match(/\{/g) || []).length;
+        const closeCurly = (repaired.match(/\}/g) || []).length;
+        const openSquare = (repaired.match(/\[/g) || []).length;
+        const closeSquare = (repaired.match(/\]/g) || []).length;
+        
+        // Add missing closing brackets
+        for (let i = 0; i < openSquare - closeSquare; i++) repaired += ']';
+        for (let i = 0; i < openCurly - closeCurly; i++) repaired += '}';
+        
+        parsedInsights = JSON.parse(repaired);
+        console.log('JSON repaired successfully');
+      } catch (repairError) {
+        // Attempt 2: Return a safe fallback structure so the UI doesn't hang
+        console.error('JSON repair failed, using fallback structure');
+        parsedInsights = {
+          summary: cleanedResponse.substring(0, 500),
+          decisions: { narrative: 'Session recorded. Manual review required.', commitments: [] },
+          tasks_assigned: [],
+          emotional_behavioral: { overall_tone: 'neutral', engagement_level: 'medium', confidence_level: 'medium' },
+          risk_flags: [],
+          patterns: [],
+          suggested_questions: [],
+          key_issues: [],
+          goal_alignment: [],
+          ai_confidence_overall: 0.5
+        };
+      }
     }
 
     // Update sessions table with AI output

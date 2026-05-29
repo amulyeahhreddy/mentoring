@@ -1,0 +1,614 @@
+{
+  "app/api/admin/assign-mentor/route.ts": {
+    "methods": [
+      "POST"
+    ],
+    "hasAuthCheck": true,
+    "tablesReferenced": [
+      "profiles",
+      "mentor_classes"
+    ],
+    "mockOrStub": false,
+    "lines": 54,
+    "size": 1729
+  },
+  "app/api/admin/audit-logs/route.ts": {
+    "methods": [
+      "GET"
+    ],
+    "hasAuthCheck": true,
+    "tablesReferenced": [
+      "profiles",
+      "audit_events"
+    ],
+    "mockOrStub": false,
+    "lines": 180,
+    "size": 5937
+  },
+  "app/api/admin/classes/route.ts": {
+    "methods": [
+      "GET"
+    ],
+    "hasAuthCheck": true,
+    "tablesReferenced": [
+      "profiles",
+      "classes",
+      "mentor_classes",
+      "enrollments"
+    ],
+    "mockOrStub": false,
+    "lines": 65,
+    "size": 2186
+  },
+  "app/api/admin/create-class/route.ts": {
+    "methods": [
+      "POST"
+    ],
+    "hasAuthCheck": true,
+    "tablesReferenced": [
+      "profiles",
+      "classes"
+    ],
+    "mockOrStub": false,
+    "lines": 81,
+    "size": 2325
+  },
+  "app/api/admin/create-user/route.ts": {
+    "methods": [
+      "POST"
+    ],
+    "hasAuthCheck": true,
+    "tablesReferenced": [
+      "profiles"
+    ],
+    "mockOrStub": false,
+    "lines": 63,
+    "size": 1893
+  },
+  "app/api/admin/enrollments/route.ts": {
+    "methods": [
+      "GET"
+    ],
+    "hasAuthCheck": true,
+    "tablesReferenced": [
+      "profiles",
+      "enrollments",
+      "mentor_classes"
+    ],
+    "mockOrStub": false,
+    "lines": 57,
+    "size": 2213
+  },
+  "app/api/admin/users/route.ts": {
+    "methods": [
+      "GET"
+    ],
+    "hasAuthCheck": true,
+    "tablesReferenced": [
+      "profiles",
+      "enrollments",
+      "mentor_classes"
+    ],
+    "mockOrStub": false,
+    "lines": 69,
+    "size": 2419
+  },
+  "app/api/get-profile/route.ts": {
+    "methods": [
+      "POST"
+    ],
+    "hasAuthCheck": false,
+    "tablesReferenced": [
+      "profiles"
+    ],
+    "mockOrStub": false,
+    "lines": 71,
+    "size": 1851
+  },
+  "app/api/mentor/students/route.ts": {
+    "methods": [
+      "GET"
+    ],
+    "hasAuthCheck": true,
+    "tablesReferenced": [
+      "mentor_classes",
+      "enrollments",
+      "profiles",
+      "btech_sem_records",
+      "pre_session_insights"
+    ],
+    "mockOrStub": false,
+    "lines": 66,
+    "size": 2498
+  },
+  "app/api/migration/normalize/route.ts": {
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "hasAuthCheck": true,
+    "tablesReferenced": [
+      "profiles",
+      "sessions",
+      "session_course_ratings",
+      "session_facility_feedback"
+    ],
+    "mockOrStub": false,
+    "lines": 358,
+    "size": 11734
+  },
+  "app/api/session/course-ratings/route.ts": {
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "hasAuthCheck": true,
+    "tablesReferenced": [
+      "session_course_ratings"
+    ],
+    "mockOrStub": false,
+    "lines": 82,
+    "size": 2627
+  },
+  "app/api/session/create/route.ts": {
+    "methods": [
+      "POST"
+    ],
+    "hasAuthCheck": false,
+    "tablesReferenced": [
+      "sessions"
+    ],
+    "mockOrStub": false,
+    "lines": 82,
+    "size": 2363
+  },
+  "app/api/session/extract-insights/route.ts": {
+    "methods": [
+      "POST"
+    ],
+    "hasAuthCheck": false,
+    "tablesReferenced": [
+      "sessions"
+    ],
+    "mockOrStub": false,
+    "lines": 352,
+    "size": 11422
+  },
+  "app/api/session/facility-feedback/route.ts": {
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "hasAuthCheck": true,
+    "tablesReferenced": [
+      "session_facility_feedback"
+    ],
+    "mockOrStub": false,
+    "lines": 98,
+    "size": 3156
+  },
+  "app/api/session/get/route.ts": {
+    "methods": [
+      "GET"
+    ],
+    "hasAuthCheck": false,
+    "tablesReferenced": [
+      "sessions"
+    ],
+    "mockOrStub": false,
+    "lines": 21,
+    "size": 786
+  },
+  "app/api/session/list/route.ts": {
+    "methods": [
+      "GET"
+    ],
+    "hasAuthCheck": false,
+    "tablesReferenced": [
+      "sessions"
+    ],
+    "mockOrStub": false,
+    "lines": 22,
+    "size": 966
+  },
+  "app/api/session/pre-session-questions/route.ts": {
+    "methods": [
+      "POST"
+    ],
+    "hasAuthCheck": false,
+    "tablesReferenced": [],
+    "mockOrStub": false,
+    "lines": 178,
+    "size": 6187
+  },
+  "app/api/session/process-audio/route.ts": {
+    "methods": [
+      "POST"
+    ],
+    "hasAuthCheck": false,
+    "tablesReferenced": [
+      "sessions"
+    ],
+    "mockOrStub": false,
+    "lines": 101,
+    "size": 2906
+  },
+  "app/api/session/transcribe/route.ts": {
+    "methods": [
+      "POST"
+    ],
+    "hasAuthCheck": false,
+    "tablesReferenced": [
+      "sessions"
+    ],
+    "mockOrStub": false,
+    "lines": 66,
+    "size": 2081
+  },
+  "app/api/session/update/route.ts": {
+    "methods": [
+      "POST"
+    ],
+    "hasAuthCheck": false,
+    "tablesReferenced": [
+      "sessions"
+    ],
+    "mockOrStub": false,
+    "lines": 68,
+    "size": 1966
+  },
+  "app/api/session/upload-audio/route.ts": {
+    "methods": [
+      "POST"
+    ],
+    "hasAuthCheck": false,
+    "tablesReferenced": [
+      "session-recordings",
+      "sessions"
+    ],
+    "mockOrStub": false,
+    "lines": 95,
+    "size": 3136
+  },
+  "app/api/sessions/[id]/acknowledge/route.ts": {
+    "methods": [
+      "POST"
+    ],
+    "hasAuthCheck": true,
+    "tablesReferenced": [
+      "profiles",
+      "sessions"
+    ],
+    "mockOrStub": false,
+    "lines": 58,
+    "size": 2188
+  },
+  "app/api/sessions/[id]/approve/route.ts": {
+    "methods": [
+      "POST"
+    ],
+    "hasAuthCheck": true,
+    "tablesReferenced": [
+      "profiles",
+      "sessions"
+    ],
+    "mockOrStub": false,
+    "lines": 66,
+    "size": 2257
+  },
+  "app/api/sessions/[id]/sign-off/route.ts": {
+    "methods": [
+      "POST"
+    ],
+    "hasAuthCheck": true,
+    "tablesReferenced": [
+      "profiles",
+      "sessions"
+    ],
+    "mockOrStub": false,
+    "lines": 57,
+    "size": 2000
+  },
+  "app/api/student/dashboard/route.ts": {
+    "methods": [
+      "GET"
+    ],
+    "hasAuthCheck": false,
+    "tablesReferenced": [
+      "btech_sem_records",
+      "tasks",
+      "sessions"
+    ],
+    "mockOrStub": false,
+    "lines": 37,
+    "size": 1619
+  },
+  "app/api/student/join-class/route.ts": {
+    "methods": [
+      "POST"
+    ],
+    "hasAuthCheck": false,
+    "tablesReferenced": [
+      "classes",
+      "enrollments",
+      "mentor_classes"
+    ],
+    "mockOrStub": false,
+    "lines": 50,
+    "size": 1520
+  },
+  "app/api/student/save-profile/route.ts": {
+    "methods": [
+      "POST"
+    ],
+    "hasAuthCheck": false,
+    "tablesReferenced": [
+      "student_profiles"
+    ],
+    "mockOrStub": false,
+    "lines": 31,
+    "size": 910
+  },
+  "app/api/student/sessions/route.ts": {
+    "methods": [
+      "GET"
+    ],
+    "hasAuthCheck": false,
+    "tablesReferenced": [
+      "sessions"
+    ],
+    "mockOrStub": false,
+    "lines": 26,
+    "size": 964
+  },
+  "app/api/student/update-goals/route.ts": {
+    "methods": [
+      "POST"
+    ],
+    "hasAuthCheck": false,
+    "tablesReferenced": [
+      "student_profiles"
+    ],
+    "mockOrStub": false,
+    "lines": 31,
+    "size": 927
+  },
+  "app/api/students/[id]/attendance/route.ts": {
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "hasAuthCheck": true,
+    "tablesReferenced": [
+      "enrollments",
+      "mentor_classes",
+      "profiles",
+      "fortnightly_attendance"
+    ],
+    "mockOrStub": false,
+    "lines": 121,
+    "size": 4266
+  },
+  "app/api/students/[id]/backlogs/route.ts": {
+    "methods": [
+      "GET",
+      "POST",
+      "PATCH"
+    ],
+    "hasAuthCheck": true,
+    "tablesReferenced": [
+      "enrollments",
+      "mentor_classes",
+      "profiles",
+      "backlog_records"
+    ],
+    "mockOrStub": false,
+    "lines": 131,
+    "size": 4886
+  },
+  "app/api/students/[id]/briefing-context/route.ts": {
+    "methods": [
+      "GET"
+    ],
+    "hasAuthCheck": true,
+    "tablesReferenced": [],
+    "mockOrStub": false,
+    "lines": 32,
+    "size": 1050
+  },
+  "app/api/students/[id]/career-counselling/route.ts": {
+    "methods": [
+      "GET",
+      "POST",
+      "PATCH"
+    ],
+    "hasAuthCheck": true,
+    "tablesReferenced": [
+      "profiles",
+      "career_counselling"
+    ],
+    "mockOrStub": false,
+    "lines": 119,
+    "size": 4516
+  },
+  "app/api/students/[id]/export/route.ts": {
+    "methods": [
+      "GET"
+    ],
+    "hasAuthCheck": true,
+    "tablesReferenced": [
+      "profiles"
+    ],
+    "mockOrStub": false,
+    "lines": 63,
+    "size": 2112
+  },
+  "app/api/students/[id]/goals/route.ts": {
+    "methods": [
+      "GET",
+      "POST",
+      "PATCH"
+    ],
+    "hasAuthCheck": true,
+    "tablesReferenced": [
+      "profiles",
+      "goals_declaration"
+    ],
+    "mockOrStub": false,
+    "lines": 142,
+    "size": 4844
+  },
+  "app/api/students/[id]/goals/sign/route.ts": {
+    "methods": [
+      "POST"
+    ],
+    "hasAuthCheck": true,
+    "tablesReferenced": [
+      "profiles",
+      "goals_declaration"
+    ],
+    "mockOrStub": false,
+    "lines": 47,
+    "size": 1577
+  },
+  "app/api/students/[id]/impact-assessment/route.ts": {
+    "methods": [
+      "GET",
+      "POST",
+      "PATCH"
+    ],
+    "hasAuthCheck": true,
+    "tablesReferenced": [
+      "profiles",
+      "session_impact_assessment"
+    ],
+    "mockOrStub": false,
+    "lines": 128,
+    "size": 4826
+  },
+  "app/api/students/[id]/mentor-assignments/route.ts": {
+    "methods": [
+      "GET",
+      "POST",
+      "PATCH"
+    ],
+    "hasAuthCheck": true,
+    "tablesReferenced": [
+      "profiles",
+      "mentor_assignments"
+    ],
+    "mockOrStub": false,
+    "lines": 126,
+    "size": 4578
+  },
+  "app/api/students/[id]/portfolio/route.ts": {
+    "methods": [
+      "GET",
+      "POST",
+      "PATCH"
+    ],
+    "hasAuthCheck": true,
+    "tablesReferenced": [
+      "enrollments",
+      "mentor_classes",
+      "profiles",
+      "portfolio_ratings"
+    ],
+    "mockOrStub": false,
+    "lines": 151,
+    "size": 5613
+  },
+  "app/api/students/[id]/pre-admission/route.ts": {
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "hasAuthCheck": true,
+    "tablesReferenced": [
+      "profiles",
+      "pre_admission_academic_records"
+    ],
+    "mockOrStub": false,
+    "lines": 115,
+    "size": 3754
+  },
+  "app/api/students/[id]/pre-college/route.ts": {
+    "methods": [
+      "GET",
+      "POST",
+      "DELETE"
+    ],
+    "hasAuthCheck": true,
+    "tablesReferenced": [
+      "profiles",
+      "pre_college_activities"
+    ],
+    "mockOrStub": false,
+    "lines": 120,
+    "size": 4698
+  },
+  "app/api/students/[id]/psychometric/route.ts": {
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "hasAuthCheck": true,
+    "tablesReferenced": [
+      "profiles",
+      "psychometric_test"
+    ],
+    "mockOrStub": false,
+    "lines": 92,
+    "size": 3737
+  },
+  "app/api/students/[id]/questionnaire/route.ts": {
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "hasAuthCheck": true,
+    "tablesReferenced": [
+      "profiles",
+      "initial_questionnaire"
+    ],
+    "mockOrStub": false,
+    "lines": 98,
+    "size": 3002
+  },
+  "app/api/tasks/complete/route.ts": {
+    "methods": [
+      "POST"
+    ],
+    "hasAuthCheck": false,
+    "tablesReferenced": [
+      "tasks"
+    ],
+    "mockOrStub": false,
+    "lines": 22,
+    "size": 796
+  },
+  "app/api/tasks/pending/route.ts": {
+    "methods": [
+      "GET"
+    ],
+    "hasAuthCheck": false,
+    "tablesReferenced": [
+      "tasks"
+    ],
+    "mockOrStub": false,
+    "lines": 22,
+    "size": 924
+  },
+  "app/api/tasks/save/route.ts": {
+    "methods": [
+      "POST"
+    ],
+    "hasAuthCheck": false,
+    "tablesReferenced": [
+      "tasks"
+    ],
+    "mockOrStub": false,
+    "lines": 30,
+    "size": 1113
+  }
+}

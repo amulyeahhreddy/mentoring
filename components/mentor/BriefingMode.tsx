@@ -1,9 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { detectClaims } from '@/lib/utils/detectClaims'
 import { InsightContext } from '@/lib/types/insightContext'
+import { getSessionStatusBadge } from '@/lib/session-utils'
 
 interface BriefingModeProps {
   selectedStudent: any;
@@ -21,6 +23,11 @@ export default function BriefingMode({ selectedStudent, mentorId, onNewSession, 
   const [exporting, setExporting] = useState(false)
   const [expandedSection, setExpandedSection] = useState<string | null>(null)
   const [expandedSession, setExpandedSession] = useState<string | null>(null)
+  const [phase1Context, setPhase1Context] = useState('')
+  const [aiBriefingLoading, setAiBriefingLoading] = useState(false)
+  const [presessionRedFlags, setPresessionRedFlags] = useState<any[]>([])
+  const [presessionQuestions, setPresessionQuestions] = useState<any[]>([])
+  const [fortnightlyAttendance, setFortnightlyAttendance] = useState<any[]>([])
 
   const supabase = createClient()
 
@@ -36,20 +43,88 @@ export default function BriefingMode({ selectedStudent, mentorId, onNewSession, 
           { data: sessionsData },
           { data: testsData },
           { data: semRecordsData },
-          { data: profileDataResponse }
+          { data: profileDataResponse },
+          { data: fortnightlyData }
         ] = await Promise.all([
-          supabase.from('sessions').select('id, session_number, session_date, status, structured_input, ai_output, created_at').eq('student_id', studentId).order('session_date', { ascending: false }),
+          supabase.from('sessions').select('id, session_number, session_date, status, session_status, structured_input, ai_output, created_at').eq('student_id', studentId).order('session_date', { ascending: false }),
           supabase.from('tests').select('id, text, assigned_to, due_by, status, created_at').eq('student_id', studentId),
           supabase.from('btech_sem_records').select('id, year, semester, sgpa, cgpa, credits_earned, backlogs').eq('student_id', studentId).order('year', { ascending: true }).order('semester', { ascending: true }),
-          supabase.from('student_profiles').select('data').eq('student_id', studentId).single()
+          supabase.from('student_profiles').select('data').eq('student_id', studentId).single(),
+          supabase.from('fortnightly_attendance').select('attendance_percentage, fortnight_number').eq('student_id', studentId).order('fortnight_number', { ascending: false }).limit(8)
         ])
 
         if (!isMounted) return
 
-        setSessions(sessionsData || [])
-        setTests(testsData || [])
-        setSemRecords(semRecordsData || [])
-        setProfileData(profileDataResponse?.data || {})
+        const sessionsList = sessionsData || []
+        const testsList = testsData || []
+        const semList = semRecordsData || []
+        const profilePayload = profileDataResponse?.data || {}
+
+        setSessions(sessionsList)
+        setTests(testsList)
+        setSemRecords(semList)
+        setProfileData(profilePayload)
+        setFortnightlyAttendance(fortnightlyData || [])
+
+        const phase1Res = await fetch(`/api/students/${studentId}/briefing-context`)
+        if (phase1Res.ok) {
+          const { context } = await phase1Res.json()
+          if (isMounted) setPhase1Context(typeof context === 'string' ? context : '')
+        }
+
+        if (isMounted) setAiBriefingLoading(true)
+        try {
+          const pendingTasks = testsList.filter((t: { status?: string }) => t.status !== 'completed')
+          const overallAttendance =
+            fortnightlyAttendance.length > 0
+              ? fortnightlyAttendance[0]?.attendance_percentage
+              : null
+
+          const response = await fetch('/api/session/pre-session-questions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              student_id: studentId,
+              profile: { data: profilePayload, goals: profilePayload?.goals },
+              sem_records: semList,
+              pending_tasks: pendingTasks,
+              prev_suggested: [],
+              carry_forward: [],
+              sessions: sessionsList,
+              tone_history: sessionsList
+                .slice(0, 4)
+                .map((s: { ai_output?: { emotional_behavioral?: { overall_tone?: string } } }) =>
+                  s.ai_output?.emotional_behavioral?.overall_tone
+                )
+                .filter(Boolean)
+                .reverse(),
+              engagement_history: sessionsList
+                .slice(0, 4)
+                .map((s: { ai_output?: { emotional_behavioral?: { engagement_level?: string } } }) =>
+                  s.ai_output?.emotional_behavioral?.engagement_level
+                )
+                .filter(Boolean)
+                .reverse(),
+              overall_attendance: overallAttendance,
+            }),
+          })
+
+          if (response.ok && isMounted) {
+            const data = await response.json()
+            const questionsList = data.questions || (Array.isArray(data) ? data : [])
+            setPresessionRedFlags(data.red_flags || [])
+            setPresessionQuestions(
+              questionsList.map((q: { text?: string; reason?: string }, i: number) => ({
+                ...q,
+                id: `briefing-q-${i}`,
+              }))
+            )
+          }
+        } catch (briefingErr) {
+          console.warn('AI briefing generation unavailable:', briefingErr)
+        } finally {
+          if (isMounted) setAiBriefingLoading(false)
+        }
       } catch (err) {
         console.error('Error fetching data:', err)
       } finally {
@@ -115,9 +190,8 @@ export default function BriefingMode({ selectedStudent, mentorId, onNewSession, 
 
   // --- DERIVE METRICS ---
   const latestSession = sessions[0] || {}
-  const fortnightlyRecords = latestSession?.structured_input?.attendance?.fortnightly_records || []
-  const latestAttendance = fortnightlyRecords.length > 0 ? fortnightlyRecords[fortnightlyRecords.length - 1]?.percentage : null
-  const prevAttendance = fortnightlyRecords.length > 1 ? fortnightlyRecords[fortnightlyRecords.length - 2]?.percentage : null
+  const latestAttendance = fortnightlyAttendance.length > 0 ? fortnightlyAttendance[0]?.attendance_percentage : null
+  const prevAttendance = fortnightlyAttendance.length > 1 ? fortnightlyAttendance[1]?.attendance_percentage : null
   
   let attendanceTrend = { text: '— Stable', color: 'text-gray-500' }
   if (latestAttendance != null && prevAttendance != null) {
@@ -191,8 +265,8 @@ export default function BriefingMode({ selectedStudent, mentorId, onNewSession, 
     cleared_backlogs: [],
     overall_attendance: latestAttendance,
     attendance_trend: attendanceTrend.text.includes('Down') ? 'declining' : attendanceTrend.text.includes('Up') ? 'improving' : 'stable',
-    last_month_attendance: fortnightlyRecords.length > 0 
-      ? fortnightlyRecords[fortnightlyRecords.length - 1]?.percentage 
+    last_month_attendance: fortnightlyAttendance.length > 0 
+      ? fortnightlyAttendance[fortnightlyAttendance.length - 1]?.attendance_percentage 
       : null,
     low_attendance_subjects: [],
     overdue_tasks: overdueTasks.map(t => ({ task: t.text, due_by: t.due_by })),
@@ -272,6 +346,50 @@ export default function BriefingMode({ selectedStudent, mentorId, onNewSession, 
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* AI BRIEFING (Phase 1 context + Ollama pre-session questions) */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <h3 className="text-[11px] uppercase tracking-widest text-[#9090a0] font-medium">AI briefing</h3>
+              {aiBriefingLoading && (
+                <span className="text-[11px] text-[#4f6ef7] animate-pulse">Generating…</span>
+              )}
+            </div>
+            {phase1Context ? (
+              <details className="bg-white border border-[#e4e4e9] rounded-xl shadow-sm">
+                <summary className="px-4 py-3 text-[13px] font-medium cursor-pointer text-[#52525e]">
+                  Phase 1 student context (included in AI prompt)
+                </summary>
+                <pre className="px-4 pb-4 text-[11px] text-[#52525e] whitespace-pre-wrap font-sans leading-relaxed max-h-48 overflow-y-auto">
+                  {phase1Context}
+                </pre>
+              </details>
+            ) : null}
+            {!aiBriefingLoading && presessionQuestions.length > 0 && (
+              <div className="bg-white border border-[#e4e4e9] rounded-xl shadow-sm p-4 space-y-3">
+                {presessionRedFlags.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-[11px] font-bold uppercase text-[#9090a0]">AI red flags</p>
+                    {presessionRedFlags.map((flag: { severity?: string; finding?: string }, i: number) => (
+                      <p key={i} className="text-[13px] text-[#111116]">
+                        <span className="font-semibold text-[#dc2626]">{flag.severity}: </span>
+                        {flag.finding}
+                      </p>
+                    ))}
+                  </div>
+                )}
+                <p className="text-[11px] font-bold uppercase text-[#9090a0]">Suggested questions</p>
+                <ul className="space-y-2">
+                  {presessionQuestions.slice(0, 6).map((q: { id?: string; text?: string; reason?: string }) => (
+                    <li key={q.id} className="text-[13px] text-[#52525e]">
+                      <span className="font-medium text-[#111116]">{q.text}</span>
+                      {q.reason ? <span className="block text-[12px] text-[#9090a0] mt-0.5">{q.reason}</span> : null}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
 
           {/* RISK FLAGS */}
@@ -364,6 +482,8 @@ export default function BriefingMode({ selectedStudent, mentorId, onNewSession, 
                 const allConcerns = [...academicConcerns, ...personalConcerns];
                 const sentiment = session.ai_output?.student_state?.sentiment?.toLowerCase();
                 const taskCount = tests.filter(t => t.session_id === session.id).length;
+                const statusBadge = getSessionStatusBadge(session);
+                const isDraft = (session.session_status || session.status) === 'draft';
 
                 return (
                   <div 
@@ -385,11 +505,9 @@ export default function BriefingMode({ selectedStudent, mentorId, onNewSession, 
                           {session.session_date ? new Date(session.session_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A'}
                         </div>
                       </div>
-                      <div className={`text-[11px] font-medium px-2.5 py-1 rounded-full ${
-                        session.status === 'draft' ? 'bg-[#fffbeb] text-[#92400e]' : 'bg-[#ecfdf5] text-[#065f46]'
-                      }`}>
-                        {session.status === 'draft' ? 'Draft' : 'Submitted'}
-                      </div>
+                      <span className={`text-[11px] font-medium px-2.5 py-1 rounded-full ${statusBadge.className}`}>
+                        {statusBadge.label}
+                      </span>
                     </div>
 
                     {isExpanded && (
@@ -427,8 +545,8 @@ export default function BriefingMode({ selectedStudent, mentorId, onNewSession, 
                           </div>
                         )}
 
-                        {session.status === 'draft' && (
-                          <div className="pt-2">
+                        <div className="pt-2 flex flex-wrap gap-4">
+                          {isDraft && (
                             <button 
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -438,8 +556,15 @@ export default function BriefingMode({ selectedStudent, mentorId, onNewSession, 
                             >
                               Resume session &rarr;
                             </button>
-                          </div>
-                        )}
+                          )}
+                          <Link
+                            href={`/session/${session.id}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-[13px] font-bold text-[#52525e] hover:underline"
+                          >
+                            View session &rarr;
+                          </Link>
+                        </div>
                       </div>
                     )}
                   </div>

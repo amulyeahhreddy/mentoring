@@ -6,9 +6,19 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "resolve-db": "node scripts/resolve-db.js",
+    "resolve-api": "node scripts/resolve-api.js",
+    "test-db-conn": "node scripts/test-db-connection.js",
+    "scan-poolers": "node scripts/find-working-pooler.js",
+    "search-logs": "node scripts/search-logs.js",
+    "test-passwords": "node scripts/test-passwords.js",
+    "print-env": "node scripts/print-env.js",
+    "check-tables": "node scripts/check-tables.js",
+    "apply-migration": "node scripts/run-migration-js.js"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.105.3",
     "groq-sdk": "^1.1.2",
@@ -16,8 +26,11 @@
     "next": "16.2.4",
     "openai": "^6.34.0",
     "pdf-lib": "^1.17.1",
+    "pg": "^8.21.0",
+    "puppeteer": "^25.1.0",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

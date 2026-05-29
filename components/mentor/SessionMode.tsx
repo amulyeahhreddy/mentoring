@@ -2,19 +2,31 @@
 
 import React, { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import ImpactAssessmentForm from '@/components/mentor/ImpactAssessmentForm'
+import FortnightlyAttendanceForm from '@/components/mentor/FortnightlyAttendanceForm'
+import CareerCounsellingForm from '@/components/mentor/CareerCounsellingForm'
+
+import {
+  TOPICS_ADDRESSED_ITEMS,
+  showCareerCounselling,
+} from '@/lib/session-utils'
 
 interface SessionModeProps {
   selectedStudent: any
   mentorId: string
   activeSessionId: string | null
   onComplete: () => void
+  viewMode?: boolean
+  userRole?: string
 }
 
 export default function SessionMode({
   selectedStudent,
   mentorId,
   activeSessionId,
-  onComplete
+  onComplete,
+  viewMode = false,
+  userRole = 'mentor',
 }: SessionModeProps) {
   const [phase, setPhase] = useState<'student' | 'mentor'>('student')
   const [formData, setFormData] = useState<any>({
@@ -47,9 +59,26 @@ export default function SessionMode({
   const [saving, setSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [sessionNumber, setSessionNumber] = useState<number>(1)
+  const [semester, setSemester] = useState<number | null>(null)
   const [showOverlay, setShowOverlay] = useState(false)
-  
+  const [topicsAddressed, setTopicsAddressed] = useState<Record<string, boolean>>({})
+  const [indisciplinaryActivity, setIndisciplinaryActivity] = useState(false)
+  const [indisciplinaryDetails, setIndisciplinaryDetails] = useState('')
+
+
   const supabase = createClient()
+
+  const saveSessionColumns = async () => {
+    if (!activeSessionId) return
+    await supabase
+      .from('sessions')
+      .update({
+        topics_addressed: topicsAddressed,
+        indisciplinary_activity: indisciplinaryActivity,
+        indisciplinary_details: indisciplinaryDetails,
+      })
+      .eq('id', activeSessionId)
+  }
 
   useEffect(() => {
     if (!activeSessionId) return
@@ -63,10 +92,62 @@ export default function SessionMode({
 
       if (data) {
         setSessionNumber(data.session_number || 1)
+        setSemester(data.semester ?? null)
+
+        setTopicsAddressed((data.topics_addressed as Record<string, boolean>) || {})
+        setIndisciplinaryActivity(!!data.indisciplinary_activity)
+        setIndisciplinaryDetails(data.indisciplinary_details || '')
+
+        // Fetch course ratings and facility feedback from normalized tables (Phase 2)
+        let course_ratings: any[] = [{}]
+        let facility_feedback: any = {}
+
+        try {
+          const [ratingsRes, facilityRes] = await Promise.all([
+            fetch(`/api/session/course-ratings?session_id=${activeSessionId}`),
+            fetch(`/api/session/facility-feedback?session_id=${activeSessionId}`)
+          ])
+
+          if (ratingsRes.ok) {
+            const ratingsJson = await ratingsRes.json()
+            if (ratingsJson.data && ratingsJson.data.length > 0) {
+              course_ratings = ratingsJson.data.map((cr: any) => ({
+                course_code: cr.course_code || '',
+                name: cr.course_name || '',
+                rating: cr.difficulty_scale || 0,
+                informed_teacher: cr.teacher_informed || false,
+                faculty_action: cr.faculty_response || ''
+              }))
+            }
+          }
+
+          if (facilityRes.ok) {
+            const facilityJson = await facilityRes.json()
+            if (facilityJson.data) {
+              const dbFeedback = facilityJson.data
+              facility_feedback = {
+                'Canteen': dbFeedback.canteen_remarks || '',
+                'Transport': dbFeedback.transport_remarks || '',
+                'Ragging': dbFeedback.ragging_remarks || '',
+                'Sanitation': dbFeedback.sanitation_remarks || '',
+                'Library': dbFeedback.library_remarks || '',
+                'Laboratories': dbFeedback.lab_remarks || ''
+              }
+            }
+          }
+        } catch (fetchErr) {
+          console.error('Error fetching normalized session data:', fetchErr)
+        }
+
         if (data.structured_input) {
           setFormData((prev: any) => {
             const merged = { ...prev, ...data.structured_input }
-            if (!merged.student) merged.student = prev.student
+            if (!merged.student) merged.student = { ...prev.student }
+            
+            // Merge the fetched normalized values
+            merged.student.course_ratings = course_ratings
+            merged.student.facility_feedback = facility_feedback
+
             if (!merged.mentor) merged.mentor = prev.mentor
             if (!merged.mentor.attribute_improvement || merged.mentor.attribute_improvement.length === 0) {
                 merged.mentor.attribute_improvement = prev.mentor.attribute_improvement
@@ -83,12 +164,49 @@ export default function SessionMode({
     if (!activeSessionId) return
     const interval = setInterval(async () => {
       try {
+        // Save course_ratings to normalized table (Phase 2)
+        if (formData.student?.course_ratings) {
+          await fetch('/api/session/course-ratings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              session_id: activeSessionId,
+              student_id: selectedStudent.id,
+              course_ratings: formData.student.course_ratings
+            })
+          })
+        }
+
+        // Save facility_feedback to normalized table (Phase 2)
+        if (formData.student?.facility_feedback) {
+          await fetch('/api/session/facility-feedback', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              session_id: activeSessionId,
+              student_id: selectedStudent.id,
+              facility_feedback: formData.student.facility_feedback
+            })
+          })
+        }
+
+        // Prepare structured_input without course_ratings and facility_feedback
+        // (they are now saved to normalized tables as of Phase 2)
+        const structuredInputWithoutNormalized = {
+          ...formData,
+          student: {
+            ...formData.student,
+            course_ratings: undefined,
+            facility_feedback: undefined
+          }
+        }
+
         const res = await fetch('/api/session/update', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             session_id: activeSessionId,
-            structured_input: formData
+            structured_input: structuredInputWithoutNormalized
           })
         })
         if (!res.ok) {
@@ -99,18 +217,73 @@ export default function SessionMode({
       }
     }, 30000)
     return () => clearInterval(interval)
-  }, [activeSessionId, formData])
+  }, [activeSessionId, formData, selectedStudent.id])
+
+
   const saveImmediate = async () => {
     if (!activeSessionId) return
     setSaving(true)
-    const { error } = await supabase
-      .from('sessions')
-      .update({ structured_input: formData })
-      .eq('id', activeSessionId)
-    if (!error) {
-      setLastSaved(new Date())
+
+    try {
+      // Save course_ratings to normalized table (Phase 2)
+      if (formData.student?.course_ratings) {
+        await fetch('/api/session/course-ratings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            session_id: activeSessionId,
+            student_id: selectedStudent.id,
+            course_ratings: formData.student.course_ratings
+          })
+        })
+      }
+
+      // Save facility_feedback to normalized table (Phase 2)
+      if (formData.student?.facility_feedback) {
+        await fetch('/api/session/facility-feedback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            session_id: activeSessionId,
+            student_id: selectedStudent.id,
+            facility_feedback: formData.student.facility_feedback
+          })
+        })
+      }
+
+      // Prepare structured_input without course_ratings and facility_feedback
+      // (they are now saved to normalized tables as of Phase 2)
+      const structuredInputWithoutNormalized = {
+        ...formData,
+        student: {
+          ...formData.student,
+          course_ratings: undefined,
+          facility_feedback: undefined
+        }
+      }
+
+      const { error } = await supabase
+        .from('sessions')
+        .update({
+          structured_input: structuredInputWithoutNormalized,
+          topics_addressed: topicsAddressed,
+          indisciplinary_activity: indisciplinaryActivity,
+          indisciplinary_details: indisciplinaryDetails,
+        })
+        .eq('id', activeSessionId)
+
+      if (!error) {
+        setLastSaved(new Date())
+      }
+    } catch (err) {
+      console.error('Save error:', err)
     }
+
     setSaving(false)
+  }
+
+  const toggleTopic = (key: string) => {
+    setTopicsAddressed((prev) => ({ ...prev, [key]: !prev[key] }))
   }
 
   const handleStudentDone = async () => {
@@ -118,18 +291,11 @@ export default function SessionMode({
     setShowOverlay(true)
   }
 
-  const handleMentorComplete = async () => {
-    setSaving(true)
-    const { error } = await supabase
-      .from('sessions')
-      .update({ structured_input: formData })
-      .eq('id', activeSessionId)
-    
-    setSaving(false)
-    if (!error) {
-      onComplete()
-    }
+  const handleMentorSave = async () => {
+    await saveImmediate()
   }
+
+
 
   if (!activeSessionId) {
     return (
@@ -409,6 +575,24 @@ export default function SessionMode({
               </>
             ) : (
               <>
+
+
+                {sessionNumber > 1 && activeSessionId && (
+                  <ImpactAssessmentForm
+                    studentId={selectedStudent.id}
+                    sessionId={activeSessionId}
+                    readOnly={viewMode}
+                  />
+                )}
+
+                {activeSessionId && (
+                  <FortnightlyAttendanceForm
+                    studentId={selectedStudent.id}
+                    sessionId={activeSessionId}
+                    readOnly={viewMode}
+                  />
+                )}
+
                 {/* MENTOR SECTION PART B */}
                 <section className="space-y-6">
                   <div className="flex items-center gap-3 border-b border-[#f4f4f6] pb-3">
@@ -431,65 +615,7 @@ export default function SessionMode({
                     </div>
                   </div>
 
-                  <div className="space-y-4">
-                    <h5 className="text-[11px] font-bold uppercase text-[#9090a0] tracking-wider">Fortnightly Records</h5>
-                    <div className="overflow-x-auto rounded-lg border border-[#e4e4e9]">
-                      <table className="w-full text-[12px] text-left">
-                        <thead className="bg-[#f8f8fb] border-b border-[#e4e4e9]">
-                          <tr>
-                            <th className="px-3 py-2 font-bold text-[#52525e]">#</th>
-                            <th className="px-3 py-2 font-bold text-[#52525e]">From</th>
-                            <th className="px-3 py-2 font-bold text-[#52525e]">To</th>
-                            <th className="px-3 py-2 font-bold text-[#52525e]">%</th>
-                            <th className="px-3 py-2 font-bold text-[#52525e]">Parent Informed?</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[#e4e4e9]">
-                          {(formData.mentor.attendance?.fortnightly_records || []).map((record: any, idx: number) => (
-                            <tr key={idx}>
-                              <td className="px-2 py-2"><input type="text" className="w-8 bg-transparent outline-none" value={record.number || ''} onChange={(e) => {
-                                const newRecords = [...formData.mentor.attendance.fortnightly_records];
-                                newRecords[idx] = { ...record, number: e.target.value };
-                                updateMentor('attendance', { ...formData.mentor.attendance, fortnightly_records: newRecords });
-                              }} /></td>
-                              <td className="px-2 py-2"><input type="date" className="bg-transparent outline-none" value={record.from || ''} onChange={(e) => {
-                                const newRecords = [...formData.mentor.attendance.fortnightly_records];
-                                newRecords[idx] = { ...record, from: e.target.value };
-                                updateMentor('attendance', { ...formData.mentor.attendance, fortnightly_records: newRecords });
-                              }} /></td>
-                              <td className="px-2 py-2"><input type="date" className="bg-transparent outline-none" value={record.to || ''} onChange={(e) => {
-                                const newRecords = [...formData.mentor.attendance.fortnightly_records];
-                                newRecords[idx] = { ...record, to: e.target.value };
-                                updateMentor('attendance', { ...formData.mentor.attendance, fortnightly_records: newRecords });
-                              }} /></td>
-                              <td className="px-2 py-2"><input type="text" className="w-10 font-bold text-[#7c3aed] outline-none" value={record.percentage || ''} onChange={(e) => {
-                                const newRecords = [...formData.mentor.attendance.fortnightly_records];
-                                newRecords[idx] = { ...record, percentage: e.target.value };
-                                updateMentor('attendance', { ...formData.mentor.attendance, fortnightly_records: newRecords });
-                              }} /></td>
-                              <td className="px-2 py-2">
-                                <select className="bg-transparent outline-none" value={record.parent_informed || ''} onChange={(e) => {
-                                  const newRecords = [...formData.mentor.attendance.fortnightly_records];
-                                  newRecords[idx] = { ...record, parent_informed: e.target.value };
-                                  updateMentor('attendance', { ...formData.mentor.attendance, fortnightly_records: newRecords });
-                                }}>
-                                  <option value="N">NO</option>
-                                  <option value="Y">YES</option>
-                                </select>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                    <button 
-                      onClick={() => {
-                        const current = formData.mentor.attendance?.fortnightly_records || [];
-                        updateMentor('attendance', { ...formData.mentor.attendance, fortnightly_records: [...current, {}] });
-                      }}
-                      className="text-[#7c3aed] text-[11px] font-bold hover:underline"
-                    >+ Add Fortnight</button>
-                  </div>
+
                 </div>
               </section>
 
@@ -520,183 +646,99 @@ export default function SessionMode({
                 </div>
               </section>
 
-            {/* 2. ATTRIBUTE IMPROVEMENT */}
-            <section className="mb-10">
-              <h3 className="text-xl font-semibold mb-4 text-[#f0f0f5]">Attribute improvement since last session</h3>
-              <div className="bg-[#111118] border border-[rgba(255,255,255,0.06)] rounded-xl overflow-hidden shadow-sm">
-                {(formData.mentor.attribute_improvement || []).map((item: any, idx: number) => (
-                  <div key={idx} className="flex flex-col md:flex-row md:items-center p-4 border-b border-[rgba(255,255,255,0.06)] last:border-0 hover:bg-[#0d0d14] transition-colors">
-                    <div className="w-[140px] font-medium text-[#f0f0f5] mb-3 md:mb-0 shrink-0">
-                      {item.attribute}
-                    </div>
-                    <div className="flex bg-[#16161f] rounded-lg p-1 shrink-0 mr-4">
-                      {['Yes', 'No', 'Insignificant'].map(opt => (
-                        <button 
-                          key={opt}
-                          className={`px-3 py-1.5 text-sm rounded-md transition-all ${item.status === opt ? 'bg-[#111118] shadow text-[#7c3aed] font-medium' : 'text-[#8b8b9e]'}`}
-                          onClick={() => updateMentorArray('attribute_improvement', idx, 'status', opt)}
-                        >{opt}</button>
-                      ))}
-                    </div>
-                    <input 
-                      type="text" placeholder="Mentor suggestion" 
-                      className="flex-1 min-w-[200px] mt-3 md:mt-0 p-2 text-sm border border-[rgba(255,255,255,0.06)] rounded-lg focus:ring-2 focus:ring-[rgba(124,58,237,0.15)] focus:border-[#7c3aed] outline-none"
-                      value={item.suggestion || ''}
-                      onChange={(e) => updateMentorArray('attribute_improvement', idx, 'suggestion', e.target.value)}
-                    />
-                  </div>
-                ))}
-              </div>
-            </section>
+              {/* Topics Addressed + Indisciplinary Activity */}
+              <section className="space-y-6">
+                <div className="flex items-center gap-3 border-b border-[#f4f4f6] pb-3">
+                  <span className="text-[11px] font-black text-[#7c3aed] uppercase tracking-wider">SEC IIb</span>
+                  <h4 className="text-[13px] font-bold uppercase tracking-widest text-[#111116]">
+                    Topics Addressed This Session
+                  </h4>
+                </div>
+                <div className="grid grid-cols-1 gap-3 p-5 bg-[#fcfcfd] border border-[#e4e4e9] rounded-xl">
+                  {TOPICS_ADDRESSED_ITEMS.map((item) => (
+                    <label
+                      key={item.key}
+                      className="flex items-start gap-3 cursor-pointer group"
+                    >
+                      <input
+                        type="checkbox"
+                        disabled={viewMode}
+                        checked={!!topicsAddressed[item.key]}
+                        onChange={() => {
+                          toggleTopic(item.key)
+                          if (!viewMode) saveSessionColumns()
+                        }}
+                        className="mt-0.5 w-4 h-4 rounded border-[#d1d1db] text-[#7c3aed] focus:ring-[#7c3aed]"
+                      />
+                      <span className="text-[13px] text-[#52525e] group-hover:text-[#111116] transition-colors">
+                        {item.label}
+                      </span>
+                    </label>
+                  ))}
+                </div>
 
-            {/* 3. TRANSFORMATION ANALYSIS */}
-            {sessionNumber >= 2 && (
-              <section className="mb-10">
-                <h3 className="text-xl font-semibold mb-4 text-[#f0f0f5]">Transformation analysis</h3>
-                <div className="bg-[#111118] border border-[rgba(255,255,255,0.06)] rounded-xl overflow-hidden shadow-sm">
-                  {[
-                    "Q28. Is there any improvement in marks scored?",
-                    "Q29. Did you observe improvement in attendance percentage?",
-                    "Q30. Did the mentee understand the relevance of course work?",
-                    "Q31. Did the mentee understand the importance of classroom activities?",
-                    "Q32. Did the mentee understand the importance of Lab exercises?",
-                    "Q33. Did the mentee understand the importance of self-motivation?",
-                    "Q34. Did you notice any perceptible change in attitude?",
-                    "Q34b. Is the mentee sensitive to constructive criticism?",
-                    "Q35. Did you observe change in motivation and confidence level?"
-                  ].map((question, idx) => {
-                    const ans = formData.mentor.transformation_analysis?.[idx]?.answer;
-                    return (
-                      <div key={idx} className="flex flex-col md:flex-row md:items-center justify-between p-4 border-b border-[rgba(255,255,255,0.06)] last:border-0 hover:bg-[#0d0d14] transition-colors">
-                        <div className="text-sm text-[#f0f0f5] mb-3 md:mb-0 pr-4 flex-1">
-                          {question}
-                        </div>
-                        <div className="flex bg-[#16161f] rounded-lg p-1 shrink-0">
-                          {['Yes', 'No', 'Insignificant', 'NA'].map(opt => (
-                            <button 
-                              key={opt}
-                              className={`px-3 py-1.5 text-xs rounded-md transition-all ${ans === opt ? 'bg-[#111118] shadow text-[#7c3aed] font-medium' : 'text-[#8b8b9e]'}`}
-                              onClick={() => {
-                                const arr = [...(formData.mentor.transformation_analysis || [])];
-                                arr[idx] = { question, answer: opt };
-                                updateMentor('transformation_analysis', arr);
-                              }}
-                            >{opt}</button>
-                          ))}
-                        </div>
+                <div className="space-y-4 p-5 bg-[#fcfcfd] border border-[#e4e4e9] rounded-xl">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[13px] font-medium text-[#111116]">
+                      Indisciplinary Activity Observed
+                    </span>
+                    <button
+                      type="button"
+                      disabled={viewMode}
+                      onClick={() => {
+                        setIndisciplinaryActivity((v) => !v)
+                        if (!viewMode) saveSessionColumns()
+                      }}
+                      className={`relative w-11 h-6 rounded-full transition-colors ${
+                        indisciplinaryActivity ? 'bg-[#dc2626]' : 'bg-[#d1d1db]'
+                      }`}
+                    >
+                      <span
+                        className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                          indisciplinaryActivity ? 'translate-x-5' : ''
+                        }`}
+                      />
+                    </button>
+                  </div>
+                  {indisciplinaryActivity && (
+                    <>
+                      <div className="bg-[#fef2f2] border border-[#fecaca] rounded-lg px-4 py-3 text-[13px] text-[#dc2626] font-medium">
+                        This session will be flagged for coordinator review.
                       </div>
-                    )
-                  })}
+                      <textarea
+                        disabled={viewMode}
+                        placeholder="Describe the indisciplinary activity…"
+                        value={indisciplinaryDetails}
+                        onChange={(e) => setIndisciplinaryDetails(e.target.value)}
+                        onBlur={() => !viewMode && saveSessionColumns()}
+                        className="w-full p-3 bg-white border border-[#e4e4e9] rounded-lg text-[13px] min-h-[100px] outline-none focus:border-[#dc2626]"
+                      />
+                    </>
+                  )}
                 </div>
               </section>
-            )}
 
-            {/* 4. TEST SCORES */}
-            <section className="mb-10">
-              <h3 className="text-xl font-semibold mb-4 text-[#f0f0f5]">Aptitude & test scores this semester</h3>
-              <div className="bg-[#111118] border border-[rgba(255,255,255,0.06)] rounded-xl p-5 shadow-sm">
-                <div className="overflow-hidden rounded-lg border border-[rgba(255,255,255,0.06)]">
-                  <table className="w-full text-sm text-left text-[#8b8b9e]">
-                    <thead className="text-xs text-[#f0f0f5] bg-[#0d0d14] border-b border-[rgba(255,255,255,0.06)]">
-                      <tr>
-                        <th className="px-4 py-3 w-24">Test #</th>
-                        <th className="px-4 py-3">Type</th>
-                        <th className="px-4 py-3">Score</th>
-                        <th className="px-4 py-3 w-10"></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(formData.mentor.aptitude_test_scores || []).map((test: any, idx: number) => (
-                        <tr key={idx} className="border-b border-[rgba(255,255,255,0.06)] last:border-0 bg-[#111118]">
-                          <td className="px-3 py-2"><input type="text" className="w-full p-1.5 border border-[rgba(255,255,255,0.06)] rounded" placeholder="Test 1" value={test.number || ''} onChange={(e) => updateMentorArray('aptitude_test_scores', idx, 'number', e.target.value)}/></td>
-                          <td className="px-3 py-2">
-                            <select className="w-full p-1.5 border border-[rgba(255,255,255,0.06)] rounded outline-none" value={test.type || ''} onChange={(e) => updateMentorArray('aptitude_test_scores', idx, 'type', e.target.value)}>
-                              <option value="">Select type</option>
-                              <option value="Quantitative">Quantitative</option>
-                              <option value="Verbal">Verbal</option>
-                              <option value="Logical">Logical</option>
-                              <option value="Programming">Programming</option>
-                            </select>
-                          </td>
-                          <td className="px-3 py-2"><input type="text" className="w-full p-1.5 border border-[rgba(255,255,255,0.06)] rounded" placeholder="Score / Percentile" value={test.score || ''} onChange={(e) => updateMentorArray('aptitude_test_scores', idx, 'score', e.target.value)}/></td>
-                          <td className="px-3 py-2 text-center">
-                            <button onClick={() => {
-                              const arr = [...formData.mentor.aptitude_test_scores];
-                              arr.splice(idx, 1);
-                              updateMentor('aptitude_test_scores', arr);
-                            }} className="text-red-400 hover:text-red-600 font-bold">×</button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <button 
-                  onClick={() => {
-                    const arr = formData.mentor.aptitude_test_scores || [];
-                    updateMentor('aptitude_test_scores', [...arr, {}]);
-                  }}
-                  className="mt-3 text-[#7c3aed] text-sm font-medium hover:bg-[rgba(124,58,237,0.08)] px-3 py-1.5 rounded-lg transition-colors inline-block"
-                >
-                  + Add score
-                </button>
-              </div>
-            </section>
-            <button 
-              onClick={handleMentorComplete}
-              className="w-full py-4 bg-[#7c3aed] hover:bg-[#6d28d9] text-white font-bold rounded-xl shadow-lg shadow-[#7c3aed]/20 transition-all active:scale-[0.98] text-[15px]"
-            >Finalize Session Entry &rarr;</button>
+              {showCareerCounselling(sessionNumber, semester) && activeSessionId && (
+                <CareerCounsellingForm
+                  studentId={selectedStudent.id}
+                  sessionId={activeSessionId}
+                  readOnly={viewMode}
+                />
+              )}
 
-            {/* 7. SIGNATURES */}
-            <section className="mb-10">
-              <h3 className="text-xl font-semibold mb-4 text-[#f0f0f5]">Signatures</h3>
-              <div className="bg-[#111118] border border-[rgba(255,255,255,0.06)] rounded-xl p-5 shadow-sm space-y-4">
-                {[
-                  { key: 'mentee', label: 'Mentee' },
-                  { key: 'mentor', label: 'Mentor' },
-                  { key: 'coordinator', label: 'Coordinator' }
-                ].map(role => {
-                  const isSigned = formData.mentor.signatures?.[role.key]?.signed;
-                  return (
-                    <div key={role.key} className="flex items-center justify-between p-3 bg-[#0d0d14] rounded-lg border border-[rgba(255,255,255,0.06)]">
-                      <span className="font-medium text-[#f0f0f5] w-32">{role.label}</span>
-                      <div className="flex bg-gray-200 rounded-lg p-1 mx-4">
-                        <button 
-                          className={`px-4 py-1.5 text-sm rounded-md transition-all ${isSigned === true ? 'bg-[#111118] shadow text-[#7c3aed] font-medium' : 'text-[#8b8b9e]'}`}
-                          onClick={() => {
-                            const sigs = { ...formData.mentor.signatures };
-                            sigs[role.key] = { signed: true, date: sigs[role.key]?.date || new Date().toISOString().split('T')[0] };
-                            updateMentor('signatures', sigs);
-                          }}
-                        >Signed</button>
-                        <button 
-                          className={`px-4 py-1.5 text-sm rounded-md transition-all ${isSigned === false || isSigned === undefined ? 'bg-[#111118] shadow text-[#7c3aed] font-medium' : 'text-[#8b8b9e]'}`}
-                          onClick={() => {
-                            const sigs = { ...formData.mentor.signatures };
-                            sigs[role.key] = { signed: false };
-                            updateMentor('signatures', sigs);
-                          }}
-                        >Not signed</button>
-                      </div>
-                      <div className="w-40 flex justify-end">
-                        {isSigned && (
-                          <input 
-                            type="date" 
-                            className="p-1.5 border border-[rgba(255,255,255,0.10)] rounded text-sm text-[#8b8b9e] outline-none w-full"
-                            value={formData.mentor.signatures?.[role.key]?.date || ''}
-                            onChange={(e) => {
-                              const sigs = { ...formData.mentor.signatures };
-                              sigs[role.key] = { ...sigs[role.key], date: e.target.value };
-                              updateMentor('signatures', sigs);
-                            }}
-                          />
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </section>
+
+            <button
+              onClick={async () => {
+                await saveImmediate()
+                onComplete()
+              }}
+              disabled={saving}
+              className="w-full py-4 bg-[#7c3aed] hover:bg-[#6d28d9] text-white font-bold rounded-xl shadow-lg transition-all text-[15px]"
+            >
+              {saving ? 'Saving…' : 'Save & Review AI Insights →'}
+            </button>
+
+
             </>
           )}
           </div>
@@ -723,23 +765,7 @@ export default function SessionMode({
         </div>
       )}
 
-      {/* STICKY BOTTOM ACTIONS */}
-      <div className="bg-white border-t border-[#e4e4e9] px-8 py-4 flex items-center justify-between shadow-[0_-4px_12px_rgba(0,0,0,0.03)] shrink-0 z-40">
-        <button 
-          onClick={onComplete}
-          className="text-[13px] font-semibold text-[#52525e] hover:bg-[#f4f4f6] px-4 py-2 rounded-lg transition-all"
-        >Discard & Exit</button>
-        <div className="flex items-center gap-3">
-          {saving ? (
-            <span className="text-[12px] text-[#9090a0] animate-pulse">Saving changes...</span>
-          ) : (
-            <button 
-              onClick={saveImmediate}
-              className="text-[13px] font-bold text-[#4f6ef7] hover:bg-[#4f6ef7]/5 px-4 py-2 rounded-lg transition-all underline underline-offset-4"
-            >Save Progress</button>
-          )}
-        </div>
-      </div>
+
     </div>
   )
 }

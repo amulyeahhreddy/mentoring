@@ -1,0 +1,1602 @@
+[
+  {
+    "path": ".env.local",
+    "size": 620,
+    "lines": 4,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "NEXT_PUBLIC_SUPABASE_URL=https://dnymnrceocbsgirwzphj.supabase.co NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRueW1ucmNlb2Nic2dpcnd6cGhqIiwicm9"
+  },
+  {
+    "path": ".gitignore",
+    "size": 480,
+    "lines": 42,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.  # dependencies /node_modules /.pnp .pnp.* .yarn/* !.yarn/patches !.yarn/plugins !.yarn/releases !.yarn/versions  "
+  },
+  {
+    "path": "AGENTS.md",
+    "size": 327,
+    "lines": 6,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "<!-- BEGIN:nextjs-agent-rules --> # This is NOT the Next.js you know  This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevan"
+  },
+  {
+    "path": "app/admin/classes/page.tsx",
+    "size": 7117,
+    "lines": 162,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "'use client'  import { useState, useEffect } from 'react' import CreateClassDialog from '@/components/admin/CreateClassDialog' import AssignMentorDialog from '@/components/admin/AssignMentorDialog'  i"
+  },
+  {
+    "path": "app/admin/components/AdminNav.tsx",
+    "size": 1692,
+    "lines": 53,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "'use client'  import Link from 'next/link' import { usePathname } from 'next/navigation'  interface NavItem {   label: string   href: string   icon: string }  export default function AdminNav({ items "
+  },
+  {
+    "path": "app/admin/components/sign-out-button.tsx",
+    "size": 676,
+    "lines": 25,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "'use client'  import { createClient } from '@/lib/supabase/client' import { useRouter } from 'next/navigation'  export default function SignOutButton() {   const router = useRouter()   const supabase "
+  },
+  {
+    "path": "app/admin/enrollments/page.tsx",
+    "size": 4861,
+    "lines": 111,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "'use client'  import { useState, useEffect } from 'react'  interface Enrollment {   student_name: string   class_name: string   mentor_name: string   enrolled_at: string }  export default function Enr"
+  },
+  {
+    "path": "app/admin/layout.tsx",
+    "size": 2629,
+    "lines": 75,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createClient } from '@/lib/supabase/server' import { redirect } from 'next/navigation' import AdminNav from './components/AdminNav' import SignOutButton from './components/sign-out-button'  e"
+  },
+  {
+    "path": "app/admin/page.tsx",
+    "size": 7931,
+    "lines": 213,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createAdminClient } from '@/lib/supabase/admin' import { createClient } from '@/lib/supabase/server' import AuditLogsWidget from '@/components/admin/AuditLogsWidget'  export default async fun"
+  },
+  {
+    "path": "app/admin/users/page.tsx",
+    "size": 9296,
+    "lines": 204,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "'use client'  import { useState, useEffect } from 'react' import CreateUserDialog from '@/components/admin/CreateUserDialog'  interface Mentor {   id: string   name: string   email: string   created_a"
+  },
+  {
+    "path": "app/api/admin/assign-mentor/route.ts",
+    "size": 1729,
+    "lines": 54,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createClient } from '@/lib/supabase/server' import { createAdminClient } from '@/lib/supabase/admin' import { NextResponse } from 'next/server'  export async function POST(request: Request) {"
+  },
+  {
+    "path": "app/api/admin/audit-logs/route.ts",
+    "size": 5939,
+    "lines": 180,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createClient } from '@/lib/supabase/server' import { createAdminClient } from '@/lib/supabase/admin' import { NextResponse } from 'next/server'  /**  * GET /api/admin/audit-logs  *   * Reads "
+  },
+  {
+    "path": "app/api/admin/classes/route.ts",
+    "size": 2186,
+    "lines": 65,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createClient } from '@/lib/supabase/server' import { createAdminClient } from '@/lib/supabase/admin' import { NextResponse } from 'next/server'  export async function GET(request: Request) { "
+  },
+  {
+    "path": "app/api/admin/create-class/route.ts",
+    "size": 2325,
+    "lines": 81,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createClient } from '@/lib/supabase/server' import { createAdminClient } from '@/lib/supabase/admin' import { NextResponse } from 'next/server'  export async function POST(request: Request) {"
+  },
+  {
+    "path": "app/api/admin/create-user/route.ts",
+    "size": 1893,
+    "lines": 63,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createClient } from '@/lib/supabase/server' import { createAdminClient } from '@/lib/supabase/admin' import { NextResponse } from 'next/server'  export async function POST(request: Request) {"
+  },
+  {
+    "path": "app/api/admin/enrollments/route.ts",
+    "size": 2213,
+    "lines": 57,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createClient } from '@/lib/supabase/server' import { createAdminClient } from '@/lib/supabase/admin' import { NextResponse } from 'next/server'  export async function GET(request: Request) { "
+  },
+  {
+    "path": "app/api/admin/users/route.ts",
+    "size": 2419,
+    "lines": 69,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createClient } from '@/lib/supabase/server' import { createAdminClient } from '@/lib/supabase/admin' import { NextResponse } from 'next/server'  export async function GET(request: Request) { "
+  },
+  {
+    "path": "app/api/get-profile/route.ts",
+    "size": 1871,
+    "lines": 71,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { NextRequest, NextResponse } from 'next/server' import { getSupabaseClient } from '@/lib/supabaseClient'  export async function POST(request: NextRequest) {   console.log('🔍 API: get-profile "
+  },
+  {
+    "path": "app/api/mentor/students/route.ts",
+    "size": 2498,
+    "lines": 66,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createClient } from '@/lib/supabase/server' import { createAdminClient } from '@/lib/supabase/admin' import { NextRequest, NextResponse } from 'next/server'  export async function GET(request"
+  },
+  {
+    "path": "app/api/migration/normalize/route.ts",
+    "size": 11734,
+    "lines": 358,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { NextRequest, NextResponse } from 'next/server'; import { createClient as createServerClient } from '@/lib/supabase/server'; import { createClient } from '@supabase/supabase-js';  // Initializ"
+  },
+  {
+    "path": "app/api/session/course-ratings/route.ts",
+    "size": 2627,
+    "lines": 82,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createClient } from '@/lib/supabase/client' import { createAdminClient } from '@/lib/supabase/admin' import { NextResponse } from 'next/server'  // GET - Fetch course ratings for a session ex"
+  },
+  {
+    "path": "app/api/session/create/route.ts",
+    "size": 2363,
+    "lines": 82,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { NextRequest, NextResponse } from 'next/server'; import { createClient } from '@supabase/supabase-js';  const supabaseAdmin = createClient(   process.env.NEXT_PUBLIC_SUPABASE_URL!,   process.e"
+  },
+  {
+    "path": "app/api/session/extract-insights/route.ts",
+    "size": 11428,
+    "lines": 352,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { NextRequest, NextResponse } from 'next/server'; import { createClient } from '@supabase/supabase-js';  interface StudentProfile {   name?: string;   program?: string;   current_semester"
+  },
+  {
+    "path": "app/api/session/facility-feedback/route.ts",
+    "size": 3156,
+    "lines": 98,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createClient } from '@/lib/supabase/client' import { createAdminClient } from '@/lib/supabase/admin' import { NextResponse } from 'next/server'  // GET - Fetch facility feedback for a session"
+  },
+  {
+    "path": "app/api/session/get/route.ts",
+    "size": 786,
+    "lines": 21,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createAdminClient } from '@/lib/supabase/admin' import { NextRequest, NextResponse } from 'next/server'  export async function GET(request: NextRequest) {   try {     const { searchParams } ="
+  },
+  {
+    "path": "app/api/session/list/route.ts",
+    "size": 966,
+    "lines": 22,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createClient } from '@/lib/supabase/server' import { createAdminClient } from '@/lib/supabase/admin' import { NextRequest, NextResponse } from 'next/server'  export async function GET(request"
+  },
+  {
+    "path": "app/api/session/pre-session-questions/route.ts",
+    "size": 6209,
+    "lines": 178,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { NextRequest, NextResponse } from 'next/server'; import { buildBriefingPhase1Context } from '@/lib/briefing-prompt-context';  export const maxDuration = 120;  export async function POST(reques"
+  },
+  {
+    "path": "app/api/session/process-audio/route.ts",
+    "size": 2906,
+    "lines": 101,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { NextRequest, NextResponse } from 'next/server'; import { createClient } from '@supabase/supabase-js';  const supabaseAdmin = createClient(   process.env.NEXT_PUBLIC_SUPABASE_URL!,   process.e"
+  },
+  {
+    "path": "app/api/session/transcribe/route.ts",
+    "size": 2081,
+    "lines": 66,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { NextRequest, NextResponse } from 'next/server' import { createAdminClient } from '@/lib/supabase/admin' import Groq from 'groq-sdk'  const groq = new Groq({ apiKey: process.env.GROQ_API_KEY }"
+  },
+  {
+    "path": "app/api/session/update/route.ts",
+    "size": 1966,
+    "lines": 68,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { NextRequest, NextResponse } from 'next/server'; import { createClient } from '@supabase/supabase-js';  const supabaseAdmin = createClient(   process.env.NEXT_PUBLIC_SUPABASE_URL!,   proc"
+  },
+  {
+    "path": "app/api/session/upload-audio/route.ts",
+    "size": 3136,
+    "lines": 95,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { NextRequest, NextResponse } from 'next/server'; import { createClient } from '@supabase/supabase-js';  const supabaseAdmin = createClient(   process.env.NEXT_PUBLIC_SUPABASE_URL!,   process.e"
+  },
+  {
+    "path": "app/api/sessions/[id]/acknowledge/route.ts",
+    "size": 2188,
+    "lines": 58,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createAdminClient } from '@/lib/supabase/admin' import { createClient } from '@/lib/supabase/server' import { NextRequest, NextResponse } from 'next/server'  export async function POST(   req"
+  },
+  {
+    "path": "app/api/sessions/[id]/approve/route.ts",
+    "size": 2257,
+    "lines": 66,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createAdminClient } from '@/lib/supabase/admin' import { createClient } from '@/lib/supabase/server' import { NextRequest, NextResponse } from 'next/server'  export async function POST(   req"
+  },
+  {
+    "path": "app/api/sessions/[id]/sign-off/route.ts",
+    "size": 2000,
+    "lines": 57,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createAdminClient } from '@/lib/supabase/admin' import { createClient } from '@/lib/supabase/server' import { NextRequest, NextResponse } from 'next/server'  export async function POST(   req"
+  },
+  {
+    "path": "app/api/student/dashboard/route.ts",
+    "size": 1619,
+    "lines": 37,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createAdminClient } from '@/lib/supabase/admin' import { NextRequest, NextResponse } from 'next/server'  export async function GET(request: NextRequest) {   try {     const { searchParams } ="
+  },
+  {
+    "path": "app/api/student/join-class/route.ts",
+    "size": 1520,
+    "lines": 50,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createAdminClient } from '@/lib/supabase/admin' import { NextRequest, NextResponse } from 'next/server'  export async function POST(request: NextRequest) {   try {     const { student_id, cla"
+  },
+  {
+    "path": "app/api/student/save-profile/route.ts",
+    "size": 910,
+    "lines": 31,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createAdminClient } from '@/lib/supabase/admin' import { NextRequest, NextResponse } from 'next/server'  export async function POST(request: NextRequest) {   try {     const { student_id, dat"
+  },
+  {
+    "path": "app/api/student/sessions/route.ts",
+    "size": 964,
+    "lines": 26,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createAdminClient } from '@/lib/supabase/admin' import { NextRequest, NextResponse } from 'next/server'  export async function GET(request: NextRequest) {   try {     const { searchParams } ="
+  },
+  {
+    "path": "app/api/student/update-goals/route.ts",
+    "size": 927,
+    "lines": 31,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createAdminClient } from '@/lib/supabase/admin' import { NextRequest, NextResponse } from 'next/server'  export async function POST(request: NextRequest) {   try {     const { student_id, goa"
+  },
+  {
+    "path": "app/api/students/[id]/attendance/route.ts",
+    "size": 4266,
+    "lines": 121,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createAdminClient } from '@/lib/supabase/admin' import { createClient } from '@/lib/supabase/server' import { NextRequest, NextResponse } from 'next/server'  async function verifyMentorAssign"
+  },
+  {
+    "path": "app/api/students/[id]/backlogs/route.ts",
+    "size": 4886,
+    "lines": 131,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createAdminClient } from '@/lib/supabase/admin' import { createClient } from '@/lib/supabase/server' import { NextRequest, NextResponse } from 'next/server'  async function verifyMentorAssign"
+  },
+  {
+    "path": "app/api/students/[id]/briefing-context/route.ts",
+    "size": 1050,
+    "lines": 32,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createClient } from '@/lib/supabase/server' import { buildBriefingPhase1Context } from '@/lib/briefing-prompt-context' import { NextRequest, NextResponse } from 'next/server'  export asyn"
+  },
+  {
+    "path": "app/api/students/[id]/career-counselling/route.ts",
+    "size": 4516,
+    "lines": 119,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createAdminClient } from '@/lib/supabase/admin' import { createClient } from '@/lib/supabase/server' import { NextRequest, NextResponse } from 'next/server'  import { verifyMentorAssignment }"
+  },
+  {
+    "path": "app/api/students/[id]/export/data.ts",
+    "size": 3876,
+    "lines": 79,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createAdminClient } from '@/lib/supabase/admin'  export async function fetchDiaryExportData(studentId: string) {   const supabase = createAdminClient()    const [     { data: profile },     {"
+  },
+  {
+    "path": "app/api/students/[id]/export/route.ts",
+    "size": 2112,
+    "lines": 63,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { NextRequest, NextResponse } from 'next/server' import { createClient } from '@/lib/supabase/server' import { fetchDiaryExportData } from './data' import { generateDiaryHTML } from './template"
+  },
+  {
+    "path": "app/api/students/[id]/export/template.ts",
+    "size": 56002,
+    "lines": 1445,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "export function generateDiaryHTML(data: any): string {   const {     profile,     preAdmissionRecords,     preCollegeActivities,     semesterResults,     aptitudeScores,     initialQuestionnaire,     "
+  },
+  {
+    "path": "app/api/students/[id]/goals/route.ts",
+    "size": 4844,
+    "lines": 142,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createAdminClient } from '@/lib/supabase/admin' import { createClient } from '@/lib/supabase/server' import { NextRequest, NextResponse } from 'next/server' import { verifyMentorAssignment } "
+  },
+  {
+    "path": "app/api/students/[id]/goals/sign/route.ts",
+    "size": 1577,
+    "lines": 47,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createAdminClient } from '@/lib/supabase/admin' import { createClient } from '@/lib/supabase/server' import { NextRequest, NextResponse } from 'next/server'  export async function POST(   req"
+  },
+  {
+    "path": "app/api/students/[id]/impact-assessment/route.ts",
+    "size": 4826,
+    "lines": 128,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createAdminClient } from '@/lib/supabase/admin' import { createClient } from '@/lib/supabase/server' import { NextRequest, NextResponse } from 'next/server'  import { verifyMentorAssignment }"
+  },
+  {
+    "path": "app/api/students/[id]/mentor-assignments/route.ts",
+    "size": 4578,
+    "lines": 126,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createAdminClient } from '@/lib/supabase/admin' import { createClient } from '@/lib/supabase/server' import { NextRequest, NextResponse } from 'next/server'  export async function GET(   requ"
+  },
+  {
+    "path": "app/api/students/[id]/portfolio/route.ts",
+    "size": 5613,
+    "lines": 151,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createAdminClient } from '@/lib/supabase/admin' import { createClient } from '@/lib/supabase/server' import { NextRequest, NextResponse } from 'next/server'  async function verifyMentorAssign"
+  },
+  {
+    "path": "app/api/students/[id]/pre-admission/route.ts",
+    "size": 3754,
+    "lines": 115,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createAdminClient } from '@/lib/supabase/admin' import { createClient } from '@/lib/supabase/server' import { NextRequest, NextResponse } from 'next/server'  import { verifyMentorAssignment }"
+  },
+  {
+    "path": "app/api/students/[id]/pre-college/route.ts",
+    "size": 4698,
+    "lines": 120,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createAdminClient } from '@/lib/supabase/admin' import { createClient } from '@/lib/supabase/server' import { NextRequest, NextResponse } from 'next/server'  import { verifyMentorAssignment }"
+  },
+  {
+    "path": "app/api/students/[id]/psychometric/route.ts",
+    "size": 3737,
+    "lines": 92,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createAdminClient } from '@/lib/supabase/admin' import { createClient } from '@/lib/supabase/server' import { NextRequest, NextResponse } from 'next/server' import { verifyMentorAssignment } "
+  },
+  {
+    "path": "app/api/students/[id]/questionnaire/route.ts",
+    "size": 3002,
+    "lines": 98,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createAdminClient } from '@/lib/supabase/admin' import { createClient } from '@/lib/supabase/server' import { NextRequest, NextResponse } from 'next/server'  import { verifyMentorAssignment }"
+  },
+  {
+    "path": "app/api/tasks/complete/route.ts",
+    "size": 796,
+    "lines": 22,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createAdminClient } from '@/lib/supabase/admin' import { NextRequest, NextResponse } from 'next/server'  export async function POST(request: NextRequest) {   try {     const { task_id, studen"
+  },
+  {
+    "path": "app/api/tasks/pending/route.ts",
+    "size": 924,
+    "lines": 22,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createAdminClient } from '@/lib/supabase/admin' import { NextRequest, NextResponse } from 'next/server'  export async function GET(request: NextRequest) {   try {     const { searchParams } ="
+  },
+  {
+    "path": "app/api/tasks/save/route.ts",
+    "size": 1113,
+    "lines": 30,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createAdminClient } from '@/lib/supabase/admin' import { NextRequest, NextResponse } from 'next/server'  export async function POST(request: NextRequest) {   try {     const { session_id, stu"
+  },
+  {
+    "path": "app/favicon.ico",
+    "size": 25931,
+    "lines": 31,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "\u0000\u0000\u0001\u0000\u0004\u0000\u0010\u0010\u0000\u0000\u0001\u0000 \u0000(\u0005\u0000\u0000F\u0000\u0000\u0000  \u0000\u0000\u0001\u0000 \u0000(\u0014\u0000\u0000n\u0005\u0000\u000000\u0000\u0000\u0001\u0000 \u0000(-\u0000\u0000�\u0019\u0000\u0000\u0000\u0000\u0000\u0000\u0001\u0000 \u0000�\u001e\u0000\u0000�F\u0000\u0000(\u0000\u0000\u0000\u0010\u0000\u0000\u0000 \u0000\u0000\u0000\u0001\u0000 \u0000\u0000\u0000\u0000\u0000\u0000\u0005\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000$\u0000\u0000\u0000]\u0000\u0000\u0000�\u0000\u0000\u0000�\u0000\u0000\u0000]\u0000\u0000\u0000$\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000 \u0000\u0000\u0000�\u0000\u0000\u0000�\u0000\u0000"
+  },
+  {
+    "path": "app/globals.css",
+    "size": 488,
+    "lines": 27,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "@import \"tailwindcss\";  :root {   --background: #ffffff;   --foreground: #171717; }  @theme inline {   --color-background: var(--background);   --color-foreground: var(--foreground);   --font-sans: va"
+  },
+  {
+    "path": "app/layout.tsx",
+    "size": 742,
+    "lines": 34,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import type { Metadata } from \"next\"; import { Geist, Geist_Mono } from \"next/font/google\"; import \"./globals.css\";  const geistSans = Geist({   variable: \"--font-geist-sans\",   subsets: [\"latin\"], })"
+  },
+  {
+    "path": "app/login/page.tsx",
+    "size": 7955,
+    "lines": 202,
+    "isStub": false,
+    "isPlaceholder": true,
+    "sample": "\"use client\"  import { useState } from 'react' import { useRouter } from 'next/navigation' import { createClient } from '@/lib/supabase/client'  export default function LoginPage() {   const [e"
+  },
+  {
+    "path": "app/mentee/(protected)/layout.tsx",
+    "size": 983,
+    "lines": 44,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createClient } from '@/lib/supabase/server' import { redirect } from 'next/navigation' import { createAdminClient } from '@/lib/supabase/admin'  export default async function MenteeLayout({  "
+  },
+  {
+    "path": "app/mentee/(protected)/page.tsx",
+    "size": 39810,
+    "lines": 804,
+    "isStub": false,
+    "isPlaceholder": true,
+    "sample": "'use client'  import { useState, useEffect, useCallback } from 'react' import Link from 'next/link' import { createClient } from '@/lib/supabase/client' import {    CheckCircle,    Calendar,    Trendi"
+  },
+  {
+    "path": "app/mentee/join-class/layout.tsx",
+    "size": 178,
+    "lines": 6,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "'use server'  export default async function JoinClassLayout({ children }: { children: React.ReactNode }) {   return <div className=\"min-h-screen bg-[#f4f4f6]\">{children}</div> } "
+  },
+  {
+    "path": "app/mentee/join-class/page.tsx",
+    "size": 5359,
+    "lines": 152,
+    "isStub": false,
+    "isPlaceholder": true,
+    "sample": "'use client'  import { useState, useEffect } from 'react' import { createClient } from '@/lib/supabase/client' import { useRouter } from 'next/navigation'  export default function JoinClassPage() {   "
+  },
+  {
+    "path": "app/mentee/onboarding/layout.tsx",
+    "size": 179,
+    "lines": 6,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "'use server'  export default async function OnboardingLayout({ children }: { children: React.ReactNode }) {   return <div className=\"min-h-screen bg-[#f4f4f6]\">{children}</div> } "
+  },
+  {
+    "path": "app/mentee/onboarding/page.tsx",
+    "size": 47675,
+    "lines": 1078,
+    "isStub": false,
+    "isPlaceholder": true,
+    "sample": "'use client'  import { useState, useEffect } from 'react' import { createClient } from '@/lib/supabase/client' import { useRouter } from 'next/navigation'  const STEPS = [   'Identity',   'Family',   "
+  },
+  {
+    "path": "app/mentee/[id]/backlogs/page.tsx",
+    "size": 1188,
+    "lines": 43,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createClient } from '@/lib/supabase/server' import BacklogTracker from '@/components/mentee/BacklogTracker' import { redirect } from 'next/navigation'  export default async function BacklogsP"
+  },
+  {
+    "path": "app/mentee/[id]/goals/page.tsx",
+    "size": 1328,
+    "lines": 48,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createClient } from '@/lib/supabase/server' import GoalsForm from '@/components/mentee/GoalsForm' import { redirect } from 'next/navigation'  export default async function GoalsPage({ params "
+  },
+  {
+    "path": "app/mentee/[id]/portfolio/[semester]/page.tsx",
+    "size": 2202,
+    "lines": 68,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createClient } from '@/lib/supabase/server' import PortfolioRubric from '@/components/mentee/PortfolioRubric' import { redirect } from 'next/navigation' import Link from 'next/link'  const SE"
+  },
+  {
+    "path": "app/mentee/[id]/pre-admission/page.tsx",
+    "size": 1099,
+    "lines": 35,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createClient } from '@/lib/supabase/server' import PreAdmissionForm from '@/components/mentee/PreAdmissionForm' import { redirect } from 'next/navigation'  export default async function PreAd"
+  },
+  {
+    "path": "app/mentee/[id]/psychometric/[testNumber]/page.tsx",
+    "size": 2430,
+    "lines": 68,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createClient } from '@/lib/supabase/server' import { redirect, notFound } from 'next/navigation' import Link from 'next/link' import PsychometricTest1 from '@/components/mentee/PsychometricTe"
+  },
+  {
+    "path": "app/mentee/[id]/questionnaire/page.tsx",
+    "size": 1243,
+    "lines": 43,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createClient } from '@/lib/supabase/server' import QuestionnaireForm from '@/components/mentee/QuestionnaireForm' import { redirect } from 'next/navigation'  export default async function Que"
+  },
+  {
+    "path": "app/mentor/handoff/[studentId]/page.tsx",
+    "size": 1950,
+    "lines": 64,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createClient } from '@/lib/supabase/server' import { redirect } from 'next/navigation' import HandoffForm from '@/components/mentor/HandoffForm'  export default async function MentorHandoffPa"
+  },
+  {
+    "path": "app/mentor/page.tsx",
+    "size": 7693,
+    "lines": 192,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "'use client' import { useState, useEffect, useCallback } from 'react' import { createClient } from '@/lib/supabase/client' import StudentList from '@/components/mentor/StudentList' import BriefingMode"
+  },
+  {
+    "path": "app/page.tsx",
+    "size": 100,
+    "lines": 6,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { redirect } from 'next/navigation'  export default function Home() {   redirect('/login') } "
+  },
+  {
+    "path": "app/session/[id]/page.tsx",
+    "size": 14645,
+    "lines": 315,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "'use client'  import { useEffect, useState } from 'react' import { useParams, useRouter } from 'next/navigation' import Link from 'next/link' import { createClient } from '@/lib/supabase/client'\r"
+  },
+  {
+    "path": "app/signup/page.tsx",
+    "size": 448,
+    "lines": 21,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "\"use client\"  import { useEffect } from 'react' import { useRouter } from 'next/navigation'  export default function SignupPage() {   const router = useRouter()    useEffect(() => {     router.replace"
+  },
+  {
+    "path": "app/student/[id]/page.tsx",
+    "size": 8274,
+    "lines": 220,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "'use client'  import { useState, useEffect } from 'react' import { createClient } from '@/lib/supabase/client' import { useParams } from 'next/navigation' import Link from 'next/link' import {    File"
+  },
+  {
+    "path": "app/test-pipeline/page.tsx",
+    "size": 8774,
+    "lines": 230,
+    "isStub": false,
+    "isPlaceholder": true,
+    "sample": "'use client';  import { useState } from 'react';  interface ProcessingStep {   id: string;   label: string;   status: 'pending' | 'processing' | 'completed' | 'error'; }  export default func"
+  },
+  {
+    "path": "CLAUDE.md",
+    "size": 11,
+    "lines": 2,
+    "isStub": true,
+    "isPlaceholder": false,
+    "sample": "@AGENTS.md "
+  },
+  {
+    "path": "complete-session-form.txt",
+    "size": 38593,
+    "lines": 885,
+    "isStub": false,
+    "isPlaceholder": true,
+    "sample": "-- COMPLETE SESSIONFORMSCREEN.TSX FILE --  'use client'  import { useState, useEffect } from 'react' import { createClient } from '@/lib/supabase/client'  interface Props {   student: any   sessionId:"
+  },
+  {
+    "path": "components/admin/AssignMentorDialog.tsx",
+    "size": 5145,
+    "lines": 166,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "'use client'  import { useState, useEffect } from 'react' import { X } from 'lucide-react'  interface Mentor {   id: string   name: string   email: string }  interface AssignMentorDialogProps {   clas"
+  },
+  {
+    "path": "components/admin/AuditLogsWidget.tsx",
+    "size": 10537,
+    "lines": 269,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "'use client'  import { useState, useEffect, useCallback } from 'react'  interface AuditLogsWidgetProps {   completedSessions: number   draftSessions: number   mentorsCount: number }  interface LogEntr"
+  },
+  {
+    "path": "components/admin/CreateClassDialog.tsx",
+    "size": 4530,
+    "lines": 140,
+    "isStub": false,
+    "isPlaceholder": true,
+    "sample": "'use client'  import { useState } from 'react' import { X } from 'lucide-react'  interface CreateClassDialogProps {   open: boolean   onClose: () => void   onSuccess: () => void }  export default func"
+  },
+  {
+    "path": "components/admin/CreateUserDialog.tsx",
+    "size": 5495,
+    "lines": 163,
+    "isStub": false,
+    "isPlaceholder": true,
+    "sample": "'use client'  import { useState } from 'react' import { X } from 'lucide-react'  interface CreateUserDialogProps {   role: 'mentor' | 'mentee'   open: boolean   onClose: () => void   onSuccess: () => "
+  },
+  {
+    "path": "components/mentee/BacklogTracker.tsx",
+    "size": 10320,
+    "lines": 235,
+    "isStub": false,
+    "isPlaceholder": true,
+    "sample": "'use client'  import { useState } from 'react' import { useForm, useFieldArray } from 'react-hook-form' import { z } from 'zod' import { zodResolver } from '@hookform/resolvers/zod' import { Plus, Sav"
+  },
+  {
+    "path": "components/mentee/ExtendedProfileForm.tsx",
+    "size": 11431,
+    "lines": 202,
+    "isStub": false,
+    "isPlaceholder": true,
+    "sample": "'use client'  import { useState } from 'react' import { useForm } from 'react-hook-form' import { z } from 'zod' import { zodResolver } from '@hookform/resolvers/zod' import { Loader2, Save, ChevronDo"
+  },
+  {
+    "path": "components/mentee/GoalsForm.tsx",
+    "size": 12521,
+    "lines": 276,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "'use client'  import { useState } from 'react' import { useForm } from 'react-hook-form' import { z } from 'zod' import { zodResolver } from '@hookform/resolvers/zod' import { Loader2, Save, FileSigna"
+  },
+  {
+    "path": "components/mentee/PortfolioRubric.tsx",
+    "size": 10375,
+    "lines": 241,
+    "isStub": false,
+    "isPlaceholder": true,
+    "sample": "'use client'  import { useState } from 'react' import { useForm, Controller } from 'react-hook-form' import { z } from 'zod' import { zodResolver } from '@hookform/resolvers/zod' import { Save, Loader"
+  },
+  {
+    "path": "components/mentee/PreAdmissionForm.tsx",
+    "size": 9008,
+    "lines": 203,
+    "isStub": false,
+    "isPlaceholder": true,
+    "sample": "'use client'  import { useState } from 'react' import { useForm } from 'react-hook-form' import { z } from 'zod' import { zodResolver } from '@hookform/resolvers/zod' import { CheckCircle2, Edit2, Loa"
+  },
+  {
+    "path": "components/mentee/PreCollegeActivities.tsx",
+    "size": 7095,
+    "lines": 206,
+    "isStub": false,
+    "isPlaceholder": true,
+    "sample": "'use client'  import { useState, useEffect } from 'react' import { ChevronDown, ChevronUp, Trash2, Plus } from 'lucide-react'  interface PreCollegeActivity {   id: string   student_id: string   activi"
+  },
+  {
+    "path": "components/mentee/PsychometricTest1.tsx",
+    "size": 4987,
+    "lines": 137,
+    "isStub": false,
+    "isPlaceholder": true,
+    "sample": "'use client'  import { useState } from 'react' import { useForm } from 'react-hook-form' import { Loader2, Save } from 'lucide-react'  const DIMENSIONS = [   \"Engineering Knowledge\",   \"Problem Analys"
+  },
+  {
+    "path": "components/mentee/PsychometricTest2.tsx",
+    "size": 4578,
+    "lines": 118,
+    "isStub": false,
+    "isPlaceholder": true,
+    "sample": "'use client'  import { useState } from 'react' import { Loader2, Save } from 'lucide-react'  // Mock 30 items for brevity as full text isn't provided, just 30 yes/no/change items const TEST_2_ITEMS = "
+  },
+  {
+    "path": "components/mentee/PsychometricTest3.tsx",
+    "size": 4373,
+    "lines": 118,
+    "isStub": false,
+    "isPlaceholder": true,
+    "sample": "'use client'  import { useState } from 'react' import { Loader2, Save } from 'lucide-react'  // 13 items for Test 3 const TEST_3_ITEMS = Array.from({ length: 13 }, (_, i) => `Item ${20 + i}: Extended "
+  },
+  {
+    "path": "components/mentee/QuestionnaireForm.tsx",
+    "size": 16970,
+    "lines": 323,
+    "isStub": false,
+    "isPlaceholder": true,
+    "sample": "'use client'  import { useState } from 'react' import { useForm } from 'react-hook-form' import { z } from 'zod' import { zodResolver } from '@hookform/resolvers/zod' import { Loader2, Save } from 'lu"
+  },
+  {
+    "path": "components/mentor/BriefingMode.tsx",
+    "size": 34982,
+    "lines": 677,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "'use client'  import { useState, useEffect } from 'react' import Link from 'next/link' import { createClient } from '@/lib/supabase/client' import { detectClaims } from '@/lib/utils/detectClaims' impo"
+  },
+  {
+    "path": "components/mentor/CareerCounsellingForm.tsx",
+    "size": 5977,
+    "lines": 155,
+    "isStub": false,
+    "isPlaceholder": true,
+    "sample": "'use client'  import { useEffect, useState } from 'react' import { CAREER_PATHWAYS } from '@/lib/session-utils'  type PathwayData = { aware?: boolean; details?: string }  interface CareerCounse"
+  },
+  {
+    "path": "components/mentor/FortnightlyAttendanceForm.tsx",
+    "size": 8760,
+    "lines": 234,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "'use client'  import { useEffect, useState } from 'react'  export interface FortnightRow {   id?: string   fortnight_number?: number   period_start?: string   period_end?: string   attendance"
+  },
+  {
+    "path": "components/mentor/HandoffForm.tsx",
+    "size": 7256,
+    "lines": 160,
+    "isStub": false,
+    "isPlaceholder": true,
+    "sample": "'use client'  import { useState } from 'react' import { useForm } from 'react-hook-form' import { Loader2, CheckCircle2, Lock } from 'lucide-react'  export default function HandoffForm({ studentId, as"
+  },
+  {
+    "path": "components/mentor/ImpactAssessmentForm.tsx",
+    "size": 6805,
+    "lines": 194,
+    "isStub": false,
+    "isPlaceholder": true,
+    "sample": "'use client'  import { useEffect, useState } from 'react' import {   IMPACT_SKILLS,   TRANSFORMATION_QUESTIONS,   RADIO_OPTIONS, } from '@/lib/session-utils'  export interface ImpactAssessmen"
+  },
+  {
+    "path": "components/mentor/ReviewMode.tsx",
+    "size": 32984,
+    "lines": 621,
+    "isStub": false,
+    "isPlaceholder": true,
+    "sample": "'use client'  import React, { useState, useEffect } from 'react' import { createClient } from '@/lib/supabase/client' import SessionApprovalPanel from '@/components/mentor/SessionApprovalPanel' \r"
+  },
+  {
+    "path": "components/mentor/SessionApprovalPanel.tsx",
+    "size": 5291,
+    "lines": 153,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "'use client'  import { useState } from 'react' import { type SessionWorkflowStatus } from '@/lib/session-utils'  interface SessionApprovalPanelProps {   sessionId: string   sessionStatus: Sessi"
+  },
+  {
+    "path": "components/mentor/SessionMode.tsx",
+    "size": 37015,
+    "lines": 772,
+    "isStub": false,
+    "isPlaceholder": true,
+    "sample": "'use client'  import React, { useState, useEffect } from 'react' import { createClient } from '@/lib/supabase/client' import ImpactAssessmentForm from '@/components/mentor/ImpactAssessmentForm' import"
+  },
+  {
+    "path": "components/mentor/StudentList.tsx",
+    "size": 4298,
+    "lines": 109,
+    "isStub": false,
+    "isPlaceholder": true,
+    "sample": "'use client'  import { useState, useMemo } from 'react';  interface StudentListProps {   students: Array<{ id: string; name: string; email: string }>;   selectedStudent: any;   onSelect: (student: any"
+  },
+  {
+    "path": "components/mentor/ValidateMode.tsx",
+    "size": 45444,
+    "lines": 870,
+    "isStub": false,
+    "isPlaceholder": true,
+    "sample": "'use client'  import React, { useState, useEffect, useRef, useCallback } from 'react' import { createClient } from '@/lib/supabase/client' import { detectClaims } from '@/lib/utils/detectClaims' "
+  },
+  {
+    "path": "components/ui/InsightTooltips.tsx",
+    "size": 17481,
+    "lines": 465,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "'use client'  import React, { useState, useRef, useEffect } from 'react' import { InsightContext } from '@/lib/types/insightContext'  // --- BASE TOOLTIP COMPONENT ---  interface TooltipProps {   chil"
+  },
+  {
+    "path": "database-setup.sql",
+    "size": 8073,
+    "lines": 225,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "-- Fix profiles trigger CREATE OR REPLACE FUNCTION handle_new_user() RETURNS TRIGGER AS $$ BEGIN   INSERT INTO profiles (id, email, name, role)   VALUES (     NEW.id,     NEW.email,     COALESCE(NEW.r"
+  },
+  {
+    "path": "eslint.config.mjs",
+    "size": 465,
+    "lines": 19,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { defineConfig, globalIgnores } from \"eslint/config\"; import nextVitals from \"eslint-config-next/core-web-vitals\"; import nextTs from \"eslint-config-next/typescript\";  const eslintConfig = defi"
+  },
+  {
+    "path": "lib/acl/verifyMentorAssignment.ts",
+    "size": 585,
+    "lines": 16,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "export async function verifyMentorAssignment(adminClient: any, mentorId: string, studentId: string) {   const { data: enrollments } = await adminClient     .from('enrollments')     .select('class_id')"
+  },
+  {
+    "path": "lib/auth.ts",
+    "size": 678,
+    "lines": 24,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "// lib/auth.ts import { supabase } from '@/lib/supabase'  export async function signUp(email: string, password: string) {   const { data, error } = await supabase.auth.signUp({     email,     pa"
+  },
+  {
+    "path": "lib/briefing-prompt-context.ts",
+    "size": 7207,
+    "lines": 226,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createAdminClient } from '@/lib/supabase/admin' import { CAREER_PATHWAYS } from '@/lib/session-utils'  const SKILL_FIELDS: { field: string; label: string }[] = [   { field: 'skill_problem"
+  },
+  {
+    "path": "lib/openai.ts",
+    "size": 446,
+    "lines": 14,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import OpenAI from 'openai';  if (!process.env.OPENAI_API_KEY) {   throw new Error('OPENAI_API_KEY is not set in environment variables'); }  export const openai = new OpenAI({   apiKey: process"
+  },
+  {
+    "path": "lib/portfolio-defaults.ts",
+    "size": 2459,
+    "lines": 23,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "export const PORTFOLIO_DEFAULTS: Record<string, { attributes: string[]; programOutcomes: string[] }> = {   \"Reports prepared\": { attributes: [\"A1\",\"A4\",\"A5\"], programOutcomes: [\"PO1\",\"PO2\",\"PO4\",\"PO9\""
+  },
+  {
+    "path": "lib/session-utils.ts",
+    "size": 4067,
+    "lines": 89,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "export type SessionWorkflowStatus =   | 'draft'   | 'mentor_review'   | 'student_acknowledged'   | 'coordinator_approved'   | 'completed'  export const SESSION_WORKFLOW_STEPS = [   { key: 'dra"
+  },
+  {
+    "path": "lib/supabase/admin.ts",
+    "size": 272,
+    "lines": 9,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createClient } from '@supabase/supabase-js' export function createAdminClient() {   return createClient(     process.env.NEXT_PUBLIC_SUPABASE_URL!,     process.env.SUPABASE_SERVICE_ROLE_KEY!,"
+  },
+  {
+    "path": "lib/supabase/client.ts",
+    "size": 357,
+    "lines": 14,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createBrowserClient } from '@supabase/ssr'  let supabaseClient: ReturnType<typeof createBrowserClient> | null = null  export function createClient() {   if (!supabaseClient) {     supabaseCli"
+  },
+  {
+    "path": "lib/supabase/server.ts",
+    "size": 607,
+    "lines": 24,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createServerClient } from '@supabase/ssr' import { cookies } from 'next/headers'  export async function createClient() {   const cookieStore = await cookies()   return createServerClient(    "
+  },
+  {
+    "path": "lib/supabase.ts",
+    "size": 238,
+    "lines": 7,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "// Re-export from the singleton client to prevent duplicates export { getSupabaseClient } from './supabaseClient'  // Backward compatibility import { getSupabaseClient } from './supabaseClient' export"
+  },
+  {
+    "path": "lib/supabaseClient.ts",
+    "size": 375,
+    "lines": 14,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createBrowserClient } from '@supabase/ssr'  let supabaseClient: ReturnType<typeof createBrowserClient> | null = null  export function getSupabaseClient() {   if (!supabaseClient) {     "
+  },
+  {
+    "path": "lib/types/insightContext.ts",
+    "size": 1436,
+    "lines": 54,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "export interface InsightContext {   // Academic   subject_stats: {     subject: string     current_score: number | null     previous_score: number | null     grade: string | null     attendance_percen"
+  },
+  {
+    "path": "lib/types.ts",
+    "size": 620,
+    "lines": 26,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "export interface MentoringSession {   session_info: {     date: string;     duration_minutes: number | null;     session_category: \"academic\" | \"personal\" | \"career\" | \"general\";   };   discussi"
+  },
+  {
+    "path": "lib/utils/detectClaims.tsx",
+    "size": 7591,
+    "lines": 222,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import React from 'react' import { InsightContext } from '@/lib/types/insightContext' import {    Tooltip,    SubjectTooltip,    SgpaTooltip,    BacklogTooltip,    AttendanceTooltip,    TaskTooltip,  "
+  },
+  {
+    "path": "mentoring-ai/.gitignore",
+    "size": 521,
+    "lines": 42,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.  # dependencies /node_modules /.pnp .pnp.* .yarn/* !.yarn/patches !.yarn/plugins !.yarn/releases !.yarn/"
+  },
+  {
+    "path": "mentoring-ai/AGENTS.md",
+    "size": 332,
+    "lines": 6,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "<!-- BEGIN:nextjs-agent-rules --> # This is NOT the Next.js you know  This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the rele"
+  },
+  {
+    "path": "mentoring-ai/app/admin/page.tsx",
+    "size": 1337,
+    "lines": 42,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "'use client';  import ProtectedRoute from '@/components/protected-route'; import { useAuth } from '@/lib/auth-context'; import { useRouter } from 'next/navigation';  export default function AdminPage("
+  },
+  {
+    "path": "mentoring-ai/app/api/extract/route.ts",
+    "size": 7066,
+    "lines": 245,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { NextResponse } from \"next/server\";  const OLLAMA_URL = \"http://localhost:11434/api/generate\";  function normalizeStringArray(input: unknown): string[] {   if (!Array.isArray(input)) retu"
+  },
+  {
+    "path": "mentoring-ai/app/api/transcribe/route.ts",
+    "size": 4962,
+    "lines": 77,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { NextResponse } from \"next/server\";  const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024; // 25MB const ALLOWED_MIME_TYPES = new Set([   \"audio/mpeg\",   \"audio/mp3\",   \"audio/wav\",   \"audio/x-"
+  },
+  {
+    "path": "mentoring-ai/app/auth/page.tsx",
+    "size": 5208,
+    "lines": 167,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "'use client';  import { useState, useEffect } from 'react'; import { useAuth } from '@/lib/auth-context'; import { useRouter } from 'next/navigation';  export default function AuthPage() {   const [is"
+  },
+  {
+    "path": "mentoring-ai/app/dashboard/page.tsx",
+    "size": 1373,
+    "lines": 42,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "'use client';  import ProtectedRoute from '@/components/protected-route'; import { useAuth } from '@/lib/auth-context'; import { useRouter } from 'next/navigation';  export default function DashboardP"
+  },
+  {
+    "path": "mentoring-ai/app/favicon.ico",
+    "size": 25931,
+    "lines": 31,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "\u0000\u0000\u0001\u0000\u0004\u0000\u0010\u0010\u0000\u0000\u0001\u0000 \u0000(\u0005\u0000\u0000F\u0000\u0000\u0000  \u0000\u0000\u0001\u0000 \u0000(\u0014\u0000\u0000n\u0005\u0000\u000000\u0000\u0000\u0001\u0000 \u0000(-\u0000\u0000�\u0019\u0000\u0000\u0000\u0000\u0000\u0000\u0001\u0000 \u0000�\u001e\u0000\u0000�F\u0000\u0000(\u0000\u0000\u0000\u0010\u0000\u0000\u0000 \u0000\u0000\u0000\u0001\u0000 \u0000\u0000\u0000\u0000\u0000\u0000\u0005\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000$\u0000\u0000\u0000]\u0000\u0000\u0000�\u0000\u0000\u0000�\u0000\u0000\u0000]\u0000\u0000\u0000$\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000 \u0000\u0000\u0000�\u0000\u0000\u0000�\u0000\u0000"
+  },
+  {
+    "path": "mentoring-ai/app/globals.css",
+    "size": 1558,
+    "lines": 84,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "@import \"tailwindcss\";  :root {   --background: #ffffff;   --foreground: #171717; }  @theme inline {   --color-background: var(--background);   --color-foreground: var(--foreground);   --fon"
+  },
+  {
+    "path": "mentoring-ai/app/layout.tsx",
+    "size": 878,
+    "lines": 39,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import type { Metadata } from \"next\"; import { Geist, Geist_Mono } from \"next/font/google\"; import \"./globals.css\"; import { AuthProvider } from '@/lib/auth-context';  const geistSans = Geist({ "
+  },
+  {
+    "path": "mentoring-ai/app/page.tsx",
+    "size": 194,
+    "lines": 9,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "export default function Home() {   return (     <main className=\"p-6\">       <h1 className=\"text-2xl font-bold\">Mentoring Assistant</h1>       <p>App running successfully</p>     </main>   ); } "
+  },
+  {
+    "path": "mentoring-ai/app/page.tsx.backup",
+    "size": 68690,
+    "lines": 1648,
+    "isStub": false,
+    "isPlaceholder": true,
+    "sample": "'use client';  import { useEffect } from 'react'; import { useRouter } from 'next/navigation'; import { useAuth } from '@/lib/auth-context';  /**  * Safely renders array items that might be str"
+  },
+  {
+    "path": "mentoring-ai/app/student/page.tsx",
+    "size": 1372,
+    "lines": 42,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "'use client';  import ProtectedRoute from '@/components/protected-route'; import { useAuth } from '@/lib/auth-context'; import { useRouter } from 'next/navigation';  export default function StudentPag"
+  },
+  {
+    "path": "mentoring-ai/CLAUDE.md",
+    "size": 12,
+    "lines": 2,
+    "isStub": true,
+    "isPlaceholder": false,
+    "sample": "@AGENTS.md "
+  },
+  {
+    "path": "mentoring-ai/components/protected-route.tsx",
+    "size": 1291,
+    "lines": 51,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "'use client';  import { useAuth } from '@/lib/auth-context'; import { useRouter } from 'next/navigation'; import { useEffect } from 'react';  interface ProtectedRouteProps {   children: React.ReactNod"
+  },
+  {
+    "path": "mentoring-ai/eslint.config.mjs",
+    "size": 483,
+    "lines": 19,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { defineConfig, globalIgnores } from \"eslint/config\"; import nextVitals from \"eslint-config-next/core-web-vitals\"; import nextTs from \"eslint-config-next/typescript\";  const eslintConfig = "
+  },
+  {
+    "path": "mentoring-ai/lib/auth-context.tsx",
+    "size": 2781,
+    "lines": 109,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "'use client';  import { createContext, useContext, useEffect, useState } from 'react'; import { supabase, UserProfile } from './supabase'; import { User } from '@supabase/supabase-js';  interface Auth"
+  },
+  {
+    "path": "mentoring-ai/lib/openai.ts",
+    "size": 446,
+    "lines": 14,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import OpenAI from 'openai';  if (!process.env.OPENAI_API_KEY) {   throw new Error('OPENAI_API_KEY is not set in environment variables'); }  export const openai = new OpenAI({   apiKey: process"
+  },
+  {
+    "path": "mentoring-ai/lib/supabase.ts",
+    "size": 432,
+    "lines": 17,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "// Re-export from main singleton client to prevent duplicates export { getSupabaseClient } from '../lib/supabaseClient'  // Backward compatibility import { getSupabaseClient } from '../lib/supabaseCli"
+  },
+  {
+    "path": "mentoring-ai/lib/types.ts",
+    "size": 620,
+    "lines": 26,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "export interface MentoringSession {   session_info: {     date: string;     duration_minutes: number | null;     session_category: \"academic\" | \"personal\" | \"career\" | \"general\";   };   discussi"
+  },
+  {
+    "path": "mentoring-ai/next-env.d.ts",
+    "size": 257,
+    "lines": 7,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "/// <reference types=\"next\" /> /// <reference types=\"next/image-types/global\" /> import \"./.next/dev/types/routes.d.ts\";  // NOTE: This file should not be edited // see https://nextjs.org/docs/ap"
+  },
+  {
+    "path": "mentoring-ai/next.config.ts",
+    "size": 140,
+    "lines": 8,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import type { NextConfig } from \"next\";  const nextConfig: NextConfig = {   /* config options here */ };  export default nextConfig; "
+  },
+  {
+    "path": "mentoring-ai/package-lock.json",
+    "size": 243104,
+    "lines": 6867,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "{   \"name\": \"mentoring-assistant\",   \"version\": \"0.1.0\",   \"lockfileVersion\": 3,   \"requires\": true,   \"packages\": {     \"\": {       \"name\": \"mentoring-assistant\",       \"version\": \"0.1.0\",  "
+  },
+  {
+    "path": "mentoring-ai/package.json",
+    "size": 684,
+    "lines": 30,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "{   \"name\": \"mentoring-assistant\",   \"version\": \"0.1.0\",   \"private\": true,   \"scripts\": {     \"dev\": \"next dev\",     \"build\": \"next build\",     \"start\": \"next start\",     \"lint\": \"eslint\"   "
+  },
+  {
+    "path": "mentoring-ai/postcss.config.mjs",
+    "size": 101,
+    "lines": 8,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "const config = {   plugins: {     \"@tailwindcss/postcss\": {},   }, };  export default config; "
+  },
+  {
+    "path": "mentoring-ai/public/file.svg",
+    "size": 391,
+    "lines": 1,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "<svg fill=\"none\" viewBox=\"0 0 16 16\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M14.5 13.5V5.41a1 1 0 0 0-.3-.7L9.8.29A1 1 0 0 0 9.08 0H1.5v13.5A2.5 2.5 0 0 0 4 16h8a2.5 2.5 0 0 0 2.5-2.5m-1.5 0v-7H8"
+  },
+  {
+    "path": "mentoring-ai/public/globe.svg",
+    "size": 1035,
+    "lines": 1,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "<svg fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 16 16\"><g clip-path=\"url(#a)\"><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M10.27 14.1a6.5 6.5 0 0 0 3.67-3.45q-1.24.21-2.7.34-.31 "
+  },
+  {
+    "path": "mentoring-ai/public/next.svg",
+    "size": 1375,
+    "lines": 1,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "<svg xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 394 80\"><path fill=\"#000\" d=\"M262 0h68.5v12.7h-27.2v66.6h-13.6V12.7H262V0ZM149 0v12.7H94v20.4h44.3v12.6H94v21h55v12.6H80.5V0h68.7zm34.3"
+  },
+  {
+    "path": "mentoring-ai/public/vercel.svg",
+    "size": 128,
+    "lines": 1,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "<svg fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 1155 1000\"><path d=\"m577.3 0 577.4 1000H0z\" fill=\"#fff\"/></svg>"
+  },
+  {
+    "path": "mentoring-ai/public/window.svg",
+    "size": 385,
+    "lines": 1,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "<svg fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 16 16\"><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M1.5 2.5h13v10a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1zM0 1h16v11.5a2.5 2.5 0 0 1-2.5 2"
+  },
+  {
+    "path": "mentoring-ai/README.md",
+    "size": 1486,
+    "lines": 37,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).  ## Getting Started  First, run the developmen"
+  },
+  {
+    "path": "mentoring-ai/supabase-setup.sql",
+    "size": 1456,
+    "lines": 52,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "-- Create profiles table CREATE TABLE IF NOT EXISTS profiles (   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,   name TEXT,   email TEXT UNIQUE NOT NULL,   role TEXT NOT NULL DEFAUL"
+  },
+  {
+    "path": "mentoring-ai/tsconfig.json",
+    "size": 700,
+    "lines": 35,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "{   \"compilerOptions\": {     \"target\": \"ES2017\",     \"lib\": [\"dom\", \"dom.iterable\", \"esnext\"],     \"allowJs\": true,     \"skipLibCheck\": true,     \"strict\": true,     \"noEmit\": true,     \"esMod"
+  },
+  {
+    "path": "middleware.ts",
+    "size": 2604,
+    "lines": 91,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { NextRequest, NextResponse } from 'next/server' import { createServerClient } from '@supabase/ssr'  export async function middleware(request: NextRequest) {   const { pathname } = request.next"
+  },
+  {
+    "path": "next-env.d.ts",
+    "size": 251,
+    "lines": 7,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "/// <reference types=\"next\" /> /// <reference types=\"next/image-types/global\" /> import \"./.next/dev/types/routes.d.ts\";  // NOTE: This file should not be edited // see https://nextjs.org/docs/app/api"
+  },
+  {
+    "path": "next.config.ts",
+    "size": 133,
+    "lines": 8,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import type { NextConfig } from \"next\";  const nextConfig: NextConfig = {   /* config options here */ };  export default nextConfig; "
+  },
+  {
+    "path": "package-lock.json",
+    "size": 255325,
+    "lines": 7376,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "{   \"name\": \"mentoring-assistant\",   \"version\": \"0.1.0\",   \"lockfileVersion\": 3,   \"requires\": true,   \"packages\": {     \"\": {       \"name\": \"mentoring-assistant\",       \"version\": \"0.1.0\",       \"dep"
+  },
+  {
+    "path": "package.json",
+    "size": 1307,
+    "lines": 46,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "{   \"name\": \"mentoring-assistant\",   \"version\": \"0.1.0\",   \"private\": true,   \"scripts\": {     \"dev\": \"next dev\",     \"build\": \"next build\",     \"start\": \"next start\",     \"lint\": \"eslint\",     \"resol"
+  },
+  {
+    "path": "phase1_migrations.sql",
+    "size": 589,
+    "lines": 13,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "// Phase 1 migration statements for Phase 1 fixes  -- Add nullable columns to extracurricular_log ALTER TABLE extracurricular_log   ADD COLUMN IF NOT EXISTS session_id UUID REFERENCES sessions(id),   "
+  },
+  {
+    "path": "postcss.config.mjs",
+    "size": 94,
+    "lines": 8,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "const config = {   plugins: {     \"@tailwindcss/postcss\": {},   }, };  export default config; "
+  },
+  {
+    "path": "public/file.svg",
+    "size": 391,
+    "lines": 1,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "<svg fill=\"none\" viewBox=\"0 0 16 16\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M14.5 13.5V5.41a1 1 0 0 0-.3-.7L9.8.29A1 1 0 0 0 9.08 0H1.5v13.5A2.5 2.5 0 0 0 4 16h8a2.5 2.5 0 0 0 2.5-2.5m-1.5 0v-7H8"
+  },
+  {
+    "path": "public/globe.svg",
+    "size": 1035,
+    "lines": 1,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "<svg fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 16 16\"><g clip-path=\"url(#a)\"><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M10.27 14.1a6.5 6.5 0 0 0 3.67-3.45q-1.24.21-2.7.34-.31 "
+  },
+  {
+    "path": "public/next.svg",
+    "size": 1375,
+    "lines": 1,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "<svg xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 394 80\"><path fill=\"#000\" d=\"M262 0h68.5v12.7h-27.2v66.6h-13.6V12.7H262V0ZM149 0v12.7H94v20.4h44.3v12.6H94v21h55v12.6H80.5V0h68.7zm34.3"
+  },
+  {
+    "path": "public/vercel.svg",
+    "size": 128,
+    "lines": 1,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "<svg fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 1155 1000\"><path d=\"m577.3 0 577.4 1000H0z\" fill=\"#fff\"/></svg>"
+  },
+  {
+    "path": "public/window.svg",
+    "size": 385,
+    "lines": 1,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "<svg fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 16 16\"><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M1.5 2.5h13v10a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1zM0 1h16v11.5a2.5 2.5 0 0 1-2.5 2"
+  },
+  {
+    "path": "README.md",
+    "size": 1450,
+    "lines": 37,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).  ## Getting Started  First, run the development se"
+  },
+  {
+    "path": "reset-others.mjs",
+    "size": 1478,
+    "lines": 27,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "// reset-others.mjs const SUPABASE_URL = \"https://dnymnrceocbsgirwzphj.supabase.co\"; const SERVICE_ROLE_KEY = \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRueW1ucmNlb2Nic2"
+  },
+  {
+    "path": "rls-policies.sql",
+    "size": 13456,
+    "lines": 375,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "-- RLS Policies for Student Profile Access -- Run these policies in Supabase SQL Editor to enable mentor access to student data  -- Enable RLS on all tables ALTER TABLE subject_marks ENABLE ROW LEVEL "
+  },
+  {
+    "path": "scripts/audit-helper.js",
+    "size": 1558,
+    "lines": 58,
+    "isStub": true,
+    "isPlaceholder": true,
+    "sample": "import fs from 'fs'; import path from 'path';  const IGNORE_DIRS = ['.git', '.next', 'node_modules', '__pycache__', 'dist', 'build', '.gemini'];  function walkDir(dir, fileList = []) {   const files ="
+  },
+  {
+    "path": "scripts/check-tables.js",
+    "size": 1812,
+    "lines": 60,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "const { createClient } = require('@supabase/supabase-js'); const fs = require('fs'); const path = require('path');  // Manually load env from .env.local const envLocalPath = path.join(__dirname, '..',"
+  },
+  {
+    "path": "scripts/find-working-pooler.js",
+    "size": 1803,
+    "lines": 61,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "const { Client } = require('pg');  const projectRef = 'dnymnrceocbsgirwzphj'; const password = 'Password123!';  const regions = [   'ap-south-1', 'ap-southeast-1', 'ap-southeast-2', 'ap-northeast-1', "
+  },
+  {
+    "path": "scripts/migrate-phase2.ts",
+    "size": 8238,
+    "lines": 244,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "/**  * Phase 2 Migration Script  *   * This script migrates course ratings and facility feedback from sessions.structured_input JSONB  * to the new normalized tables: session_course_ratings and sessio"
+  },
+  {
+    "path": "scripts/print-env.js",
+    "size": 26,
+    "lines": 2,
+    "isStub": true,
+    "isPlaceholder": false,
+    "sample": "console.log(process.env); "
+  },
+  {
+    "path": "scripts/resolve-api.js",
+    "size": 641,
+    "lines": 22,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "const dns = require('dns'); const https = require('https');  const host = 'dnymnrceocbsgirwzphj.supabase.co';  console.log(`Resolving ${host}...`); dns.lookup(host, (err, address, family) => {   if (e"
+  },
+  {
+    "path": "scripts/resolve-db.js",
+    "size": 544,
+    "lines": 21,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "const dns = require('dns');  const hostnames = [   'db.dnymnrceocbsgirwzphj.supabase.co',   'aws-0-ap-south-1.pooler.supabase.com',   'aws-0-us-east-1.pooler.supabase.com',   'aws-0-us-east-2.pooler.s"
+  },
+  {
+    "path": "scripts/run-migration-js.js",
+    "size": 7796,
+    "lines": 233,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "const { createClient } = require('@supabase/supabase-js'); const fs = require('fs'); const path = require('path');  // Load environment variables from .env.local const envLocalPath = path.join(__dirna"
+  },
+  {
+    "path": "scripts/search-logs.js",
+    "size": 1610,
+    "lines": 46,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "const fs = require('fs'); const readline = require('readline');  const logFile = 'C:\\\\Users\\\\Amulyaa\\\\.gemini\\\\antigravity\\\\brain\\\\24ffab8f-4200-41f8-a3f8-27ef95ed9f86\\\\.system_generated\\\\logs\\\\transc"
+  },
+  {
+    "path": "scripts/test-db-connection.js",
+    "size": 1412,
+    "lines": 50,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "const { Client } = require('pg');  const projectRef = 'dnymnrceocbsgirwzphj'; const password = 'Password123!'; const regions = ['ap-south-1', 'us-east-1', 'us-east-2', 'eu-central-1']; const ports = ["
+  },
+  {
+    "path": "scripts/test-passwords.js",
+    "size": 1358,
+    "lines": 60,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "const { Client } = require('pg');  const projectRef = 'dnymnrceocbsgirwzphj'; const host = 'aws-1-ap-northeast-2.pooler.supabase.com'; const port = 6543;  const passwords = [   'postgres',   'supabase"
+  },
+  {
+    "path": "seed-auth.mjs",
+    "size": 2252,
+    "lines": 51,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "// seed-auth.mjs // Run with: node seed-auth.mjs  const SUPABASE_URL = \"https://dnymnrceocbsgirwzphj.supabase.co\"; const SERVICE_ROLE_KEY = \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm"
+  },
+  {
+    "path": "simple-rls.sql",
+    "size": 1810,
+    "lines": 72,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "-- Enable RLS on all tables ALTER TABLE subject_marks ENABLE ROW LEVEL SECURITY; ALTER TABLE aptitude_test_scores ENABLE ROW LEVEL SECURITY; ALTER TABLE sessions ENABLE ROW LEVEL SECURITY; ALTER TABLE"
+  },
+  {
+    "path": "supabase/migrations/phase1_complete.sql",
+    "size": 14762,
+    "lines": 354,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "-- Applied directly to Supabase on 2026-05-21. This file is for version control only. -- Do not re-run against the live database.  -- ==============================================================="
+  },
+  {
+    "path": "supabase/migrations/phase2_audit_events.sql",
+    "size": 1495,
+    "lines": 39,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "-- Phase 2 Task 2.5: Create audit_events table (append-only, immutable) -- This table provides a true immutable audit trail for critical data changes  CREATE TABLE IF NOT EXISTS audit_events (   id UU"
+  },
+  {
+    "path": "supabase/migrations/phase2_audit_triggers.sql",
+    "size": 2178,
+    "lines": 64,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "-- Phase 2 Task 2.6: Implement log_audit_event() trigger function -- This function logs all changes to critical tables into audit_events  CREATE OR REPLACE FUNCTION log_audit_event() RETURNS TRIGGER A"
+  },
+  {
+    "path": "supabase/migrations/phase2_normalization.sql",
+    "size": 6757,
+    "lines": 176,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "-- ============================================================================= -- PHASE 2 MIGRATION: DATA MODEL NORMALIZATION & IMMUTABLE AUDIT TRAIL -- structured_input is deprecated for course_rat"
+  },
+  {
+    "path": "supabase/migrations/phase2_session_course_ratings.sql",
+    "size": 1427,
+    "lines": 38,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "-- Phase 2 Task 2.1: Create session_course_ratings table -- This table normalizes course ratings from sessions.structured_input JSONB  CREATE TABLE IF NOT EXISTS session_course_ratings (   id UUID PRI"
+  },
+  {
+    "path": "supabase/migrations/phase2_session_facility_feedback.sql",
+    "size": 1449,
+    "lines": 39,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "-- Phase 2 Task 2.2: Create session_facility_feedback table -- This table normalizes facility feedback from sessions.structured_input JSONB  CREATE TABLE IF NOT EXISTS session_facility_feedback (   id"
+  },
+  {
+    "path": "test-login.mjs",
+    "size": 821,
+    "lines": 19,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "// test-login.mjs const SUPABASE_URL = \"https://dnymnrceocbsgirwzphj.supabase.co\"; const ANON_KEY = \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRueW1ucmNlb2Nic2dpcnd6cGhq"
+  },
+  {
+    "path": "theme_replace.py",
+    "size": 3032,
+    "lines": 55,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import re  with open('components/mentor/SessionMode.tsx', 'r', encoding='utf-8') as f:     content = f.read()  # Replace specific background and layout container content = content.replace('className=\""
+  },
+  {
+    "path": "theme_replace_2.py",
+    "size": 3874,
+    "lines": 69,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import re  files_to_process = [     'components/mentor/ValidateMode.tsx',     'components/mentor/ReviewMode.tsx' ]  for filepath in files_to_process:     with open(filepath, 'r', encoding='utf-8') as "
+  },
+  {
+    "path": "theme_replace_3.py",
+    "size": 718,
+    "lines": 22,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import re  files_to_process = [     'components/mentor/ValidateMode.tsx',     'components/mentor/ReviewMode.tsx',     'components/mentor/SessionMode.tsx' ]  for filepath in files_to_process:     with "
+  },
+  {
+    "path": "tsconfig.json",
+    "size": 682,
+    "lines": 35,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "{   \"compilerOptions\": {     \"target\": \"ES2017\",     \"lib\": [\"dom\", \"dom.iterable\", \"esnext\"],     \"allowJs\": true,     \"skipLibCheck\": true,     \"strict\": true,     \"noEmit\": true,     \"esModuleInter"
+  },
+  {
+    "path": "tsconfig.tsbuildinfo",
+    "size": 188022,
+    "lines": 1,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "{\"fileNames\":[\"./node_modules/typescript/lib/lib.es5.d.ts\",\"./node_modules/typescript/lib/lib.es2015.d.ts\",\"./node_modules/typescript/lib/lib.es2016.d.ts\",\"./node_modules/typescript/lib/lib.es2017.d.t"
+  },
+  {
+    "path": "utils/supabase/client.ts",
+    "size": 433,
+    "lines": 17,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createBrowserClient } from \"@supabase/ssr\";  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL; const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;  let supabaseClient: Retu"
+  },
+  {
+    "path": "utils/supabase/middleware.ts",
+    "size": 970,
+    "lines": 36,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createServerClient } from \"@supabase/ssr\"; import { type NextRequest, NextResponse } from \"next/server\";  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL; const supabaseKey = process"
+  },
+  {
+    "path": "utils/supabase/server.ts",
+    "size": 848,
+    "lines": 29,
+    "isStub": false,
+    "isPlaceholder": false,
+    "sample": "import { createServerClient } from \"@supabase/ssr\"; import { cookies } from \"next/headers\";  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL; const supabaseKey = process.env.NEXT_PUBLIC_SUPAB"
+  }
+]

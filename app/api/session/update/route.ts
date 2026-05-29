@@ -22,7 +22,13 @@ export async function POST(request: NextRequest) {
     };
 
     if (structured_input !== undefined) {
-      updateData.structured_input = structured_input;
+      // Create a clean copy and strip normalized fields to prevent duplication
+      const cleanStructuredInput = JSON.parse(JSON.stringify(structured_input));
+      if (cleanStructuredInput?.student) {
+        delete cleanStructuredInput.student.course_ratings;
+        delete cleanStructuredInput.student.facility_feedback;
+      }
+      updateData.structured_input = cleanStructuredInput;
     }
 
     if (status !== undefined) {

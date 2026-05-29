@@ -41,12 +41,14 @@ export default function ValidateMode({
   const [recordMode, setRecordMode] = useState<'record' | 'upload'>('upload')
   const [recording, setRecording] = useState(false)
   const [timer, setTimer] = useState(0)
-  const [presessionQuestions, setPresessionQuestions] = useState<Question[]>([])
+  const [presessionQuestions, setPresessionQuestions] = useState<any[]>([])
+  const [presessionRedFlags, setPresessionRedFlags] = useState<any[]>([])
   const [presessionLoading, setPresessionLoading] = useState(false)
   const [presessionError, setPresessionError] = useState(false)
   const [insightsCollapsed, setInsightsCollapsed] = useState(false)
   const [prevSessionOutput, setPrevSessionOutput] = useState<any | null>(null)
   const [toastMessage, setToastMessage] = useState('')
+  const [showToast, setShowToast] = useState(false)
   const [semRecords, setSemRecords] = useState<any[]>([])
   const [pendingTasks, setPendingTasks] = useState<any[]>([])
 
@@ -61,6 +63,7 @@ export default function ValidateMode({
 
   // --- ON MOUNT ---
   useEffect(() => {
+    const controller = new AbortController()
     const init = async () => {
       const { data: session } = await supabase
         .from('sessions')
@@ -78,11 +81,16 @@ export default function ValidateMode({
         setAiOutput(session.ai_output)
       }
       if (session?.audio_data?.transcript) {
-        setTranscript(session.audio_data.transcript)
+        const rawTranscript = session.audio_data.transcript
+        setTranscript(typeof rawTranscript === 'object' && rawTranscript !== null && 'full_text' in rawTranscript ? rawTranscript.full_text : rawTranscript)
       }
     }
     init()
-    loadPresessionData()
+    loadPresessionData(controller.signal)
+
+    return () => {
+      controller.abort()
+    }
   }, [activeSessionId])
 
   useEffect(() => {
@@ -91,7 +99,7 @@ export default function ValidateMode({
     }
   }, [aiOutput])
 
-  const loadPresessionData = async () => {
+  const loadPresessionData = async (signal?: AbortSignal) => {
     setPresessionLoading(true)
     setPresessionError(false)
 
@@ -120,6 +128,7 @@ export default function ValidateMode({
       const response = await fetch('/api/session/pre-session-questions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal,
         body: JSON.stringify({
           student_id: selectedStudent.id,
           session_id: activeSessionId,
@@ -127,7 +136,11 @@ export default function ValidateMode({
           sem_records: semRecords || [],
           pending_tasks: pendingTasks || [],
           prev_suggested,
-          carry_forward
+          carry_forward,
+          sessions: [], // You would fetch all sessions if available, but passing empty array is safer than nothing
+          tone_history: ctx.tone_history,
+          engagement_history: ctx.engagement_history,
+          overall_attendance: ctx.overall_attendance
         })
       })
 
@@ -135,10 +148,16 @@ export default function ValidateMode({
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || 'API failed');
       }
-      const questions = await response.json()
-      setPresessionQuestions(questions.map((q: any, i: number) => ({ ...q, id: `q-${i}`, checked: false })))
+      const data = await response.json()
+      // Support both new { red_flags, questions } shape and fallback to flat array
+      const questionsList = data.questions || (Array.isArray(data) ? data : [])
+      const flagsList = data.red_flags || []
+      
+      setPresessionRedFlags(flagsList)
+      setPresessionQuestions(questionsList.map((q: any, i: number) => ({ ...q, id: `q-${i}`, checked: false })))
       setPresessionLoading(false)
     } catch (err: any) {
+      if (err.name === 'AbortError') return
       console.warn('Pre-session questions unavailable:', err)
       setPresessionQuestions([])
       setPresessionLoading(false)
@@ -228,7 +247,7 @@ export default function ValidateMode({
       // Step 3: Extracting
       setAudioStage('extracting')
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 90000)
+      const timeoutId = setTimeout(() => controller.abort(), 120000)
       
       const extractRes = await fetch('/api/session/extract-insights', {
         method: 'POST',
@@ -236,7 +255,7 @@ export default function ValidateMode({
         body: JSON.stringify({ transcript_text: fullTranscript, session_id: activeSessionId }),
         signal: controller.signal
       })
-      clearTimeout(timeoutId)
+      clearTimeout(timeoutId) // clear immediately on response, before reading body
       const aiOutputData = await extractRes.json()
       const extractedOutput = aiOutputData.ai_output || aiOutputData
 
@@ -424,31 +443,70 @@ export default function ValidateMode({
                       <span className="text-[12px] font-bold text-[#9090a0] uppercase tracking-widest">Analyzing Student Data...</span>
                     </div>
                   ) : (
-                    <div className="space-y-2">
-                      {presessionQuestions.length === 0 ? (
-                        <div className="text-center py-12">
-                          <p className="text-[13px] text-[#9090a0]">No pending items for this session.</p>
-                        </div>
-                      ) : (
-                        presessionQuestions.sort((a,b) => a.priority - b.priority).map((q) => (
-                          <div 
-                            key={q.id} 
-                            onClick={() => toggleQuestion(q.id)}
-                            className={`group p-4 rounded-xl border transition-all cursor-pointer flex gap-4 items-start ${q.checked ? 'bg-[#f8f8fb] border-transparent opacity-60' : 'bg-white border-[#e4e4e9] hover:border-[#4f6ef7]/30 hover:shadow-md'}`}
-                          >
-                            <div className={`mt-1 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${q.checked ? 'bg-[#4f6ef7] border-[#4f6ef7]' : 'border-[#e4e4e9] group-hover:border-[#4f6ef7]'}`}>
-                              {q.checked && <i className="ti ti-check text-white text-[10px]"></i>}
-                            </div>
-                            <div className="flex-1">
-                              <div className="mb-1">{getQuestionTypeBadge(q.type)}</div>
-                              <div className={`text-[13px] font-bold leading-snug ${q.checked ? 'text-[#9090a0]' : 'text-[#111116]'}`}>
-                                {q.text}
-                              </div>
-                              <div className="text-[11px] text-[#9090a0] mt-1 font-medium">{detectClaims(q.reason, ctx)}</div>
-                            </div>
+                    <div className="space-y-4">
+                      {/* Red Flags Section */}
+                      {presessionRedFlags && presessionRedFlags.length > 0 && (
+                        <div className="mb-6">
+                          <h5 className="text-[10px] font-black text-[#dc2626] uppercase tracking-[0.15em] mb-3">
+                            Critical Findings / Red Flags
+                          </h5>
+                          <div>
+                            {presessionRedFlags.map((flag, idx) => {
+                              const isHighOrCritical = flag.severity === 'critical' || flag.severity === 'high';
+                              const borderClass = isHighOrCritical ? 'border-l-[#dc2626]' : 'border-l-[#d97706]';
+                              const badgeClass = isHighOrCritical ? 'bg-[#fef2f2] text-[#dc2626]' : 'bg-[#fffbeb] text-[#92400e]';
+                              return (
+                                <div
+                                  key={`flag-${idx}`}
+                                  className={`bg-white border border-[#e4e4e9] rounded-xl shadow-sm p-4 border-l-[3px] mb-3 flex flex-col gap-2 ${borderClass}`}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${badgeClass}`}>
+                                      {flag.severity}
+                                    </span>
+                                    {flag.data_source && (
+                                      <span className="text-[10px] text-[#9090a0] font-medium uppercase tracking-widest">
+                                        Source: {flag.data_source}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-[13px] font-bold text-[#111116] leading-snug">
+                                    {flag.finding}
+                                  </p>
+                                </div>
+                              );
+                            })}
                           </div>
-                        ))
+                        </div>
                       )}
+
+                      {/* Questions Section */}
+                      <div className="space-y-2">
+                        {presessionQuestions.length === 0 ? (
+                          <div className="text-center py-12">
+                            <p className="text-[13px] text-[#9090a0]">No pending items for this session.</p>
+                          </div>
+                        ) : (
+                          [...presessionQuestions].sort((a,b) => a.priority - b.priority).map((q) => (
+                            <div 
+                              key={q.id} 
+                              onClick={() => toggleQuestion(q.id)}
+                              className={`group p-4 rounded-xl border transition-all cursor-pointer flex gap-4 items-start ${q.checked ? 'bg-[#f8f8fb] border-transparent opacity-60' : 'bg-white border-[#e4e4e9] hover:border-[#4f6ef7]/30 hover:shadow-md'}`}
+                            >
+                              <div className={`mt-1 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${q.checked ? 'bg-[#4f6ef7] border-[#4f6ef7]' : 'border-[#e4e4e9] group-hover:border-[#4f6ef7]'}`}>
+                                {q.checked && <i className="ti ti-check text-white text-[10px]"></i>}
+                              </div>
+                              <div className="flex-1">
+                                <div className="mb-1">{getQuestionTypeBadge(q.type)}</div>
+                                <div className={`text-[13px] font-bold leading-snug ${q.checked ? 'text-[#9090a0]' : 'text-[#111116]'}`}>
+                                  {q.text}
+                                </div>
+                                <div className="text-[11px] text-[#9090a0] mt-1 font-medium">{detectClaims(q.reason, ctx)}</div>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -697,13 +755,50 @@ export default function ValidateMode({
                               {c.assigned_to}
                             </div>
                             <div className="flex-1">
-                              <div className="flex justify-between">
-                                <span className="text-[14px] font-bold text-[#111116]">{c.task}</span>
-                                {c.due && <span className="text-[11px] font-black text-[#9090a0]">By {c.due}</span>}
+                              <div className="flex justify-between gap-4 items-center">
+                                <input
+                                  type="text"
+                                  className="w-full bg-transparent font-bold text-[#111116] focus:text-[#4f6ef7] outline-none text-[14px]"
+                                  value={c.task}
+                                  onChange={(e) => {
+                                    const commitments = [...(editedOutput?.decisions?.commitments || [])]
+                                    commitments[i] = { ...commitments[i], task: e.target.value }
+                                    setEditedOutput({ ...editedOutput, decisions: { ...(editedOutput?.decisions || {}), commitments } })
+                                  }}
+                                />
+                                <input
+                                  type="text"
+                                  className="bg-transparent font-black text-[#9090a0] focus:text-[#111116] outline-none text-[11px] w-20 text-right font-sans"
+                                  value={c.due || ''}
+                                  onChange={(e) => {
+                                    const commitments = [...(editedOutput?.decisions?.commitments || [])]
+                                    commitments[i] = { ...commitments[i], due: e.target.value }
+                                    setEditedOutput({ ...editedOutput, decisions: { ...(editedOutput?.decisions || {}), commitments } })
+                                  }}
+                                  placeholder="Due date"
+                                />
                               </div>
                             </div>
+                            <button
+                              onClick={() => {
+                                const commitments = (editedOutput.decisions?.commitments || []).filter((_: any, idx: number) => idx !== i)
+                                setEditedOutput({ ...editedOutput, decisions: { ...editedOutput.decisions, commitments } })
+                              }}
+                              className="text-[#9090a0] hover:text-[#dc2626] transition-colors p-1 rounded shrink-0 self-center"
+                            >
+                              <i className="ti ti-x text-[13px]"></i>
+                            </button>
                           </div>
                         ))}
+                        <button
+                          onClick={() => {
+                            const commitments = [...(editedOutput.decisions?.commitments || []), { task: '', assigned_to: 'student', due: '' }]
+                            setEditedOutput({ ...editedOutput, decisions: { ...(editedOutput?.decisions || {}), commitments } })
+                          }}
+                          className="mt-3 flex items-center gap-2 text-[13px] font-bold text-[#4f6ef7] hover:bg-[#eef1fe] px-4 py-2 rounded-xl transition-all"
+                        >
+                          <i className="ti ti-plus text-[14px]"></i> Add commitment
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -761,6 +856,14 @@ export default function ValidateMode({
           Review & Finalize Submission &rarr;
         </button>
       </div>
+
+      {/* TOAST NOTIFICATION */}
+      {showToast && (
+        <div className="fixed bottom-6 right-6 bg-[#111116] text-white text-[13px] font-bold px-5 py-3 rounded-xl shadow-2xl z-50 animate-in fade-in slide-in-from-bottom-4 duration-300 flex items-center gap-2">
+          <i className="ti ti-info-circle text-[#4f6ef7]"></i>
+          {toastMessage}
+        </div>
+      )}
     </div>
   )
 }

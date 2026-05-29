@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
+import AuditLogsWidget from '@/components/admin/AuditLogsWidget'
 
 export default async function AdminOverview() {
   const supabase = await createClient()
@@ -23,6 +24,100 @@ export default async function AdminOverview() {
   const { count: enrollmentsCount } = await adminClient
     .from('enrollments')
     .select('*', { count: 'exact', head: true })
+
+  const { count: completedSessionsCount } = await adminClient
+    .from('sessions')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'completed')
+
+  const { count: draftSessionsCount } = await adminClient
+    .from('sessions')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'draft')
+
+  const { data: recentSessions } = await adminClient
+    .from('sessions')
+    .select(`
+      id,
+      session_number,
+      session_date,
+      status,
+      created_at,
+      updated_at,
+      profiles!sessions_student_id_fkey(name),
+      mentor:profiles!sessions_mentor_id_fkey(name)
+    `)
+    .order('updated_at', { ascending: false })
+    .limit(6)
+
+  const { data: recentEnrollments } = await adminClient
+    .from('enrollments')
+    .select(`
+      enrolled_at,
+      profiles!enrollments_student_id_fkey(name),
+      classes(name)
+    `)
+    .order('enrolled_at', { ascending: false })
+    .limit(3)
+
+  type ActivityItem = {
+    icon: string
+    iconColor: string
+    text: string
+    sub: string
+    time: string
+  }
+
+  const activities: ActivityItem[] = []
+
+  recentSessions?.forEach(s => {
+    const studentProfile = s.profiles as any
+    const mentorProfile = s.mentor as any
+
+    const studentName = Array.isArray(studentProfile)
+      ? studentProfile[0]?.name
+      : studentProfile?.name || 'A student'
+
+    const mentorName = Array.isArray(mentorProfile)
+      ? mentorProfile[0]?.name
+      : mentorProfile?.name || 'A mentor'
+
+    const isCompleted = s.status === 'completed'
+    activities.push({
+      icon: isCompleted ? 'ti-circle-check' : 'ti-notes',
+      iconColor: isCompleted ? '#059669' : '#4f6ef7',
+      text: isCompleted
+        ? `Session ${s.session_number} finalized for ${studentName}`
+        : `Session ${s.session_number} draft saved for ${studentName}`,
+      sub: `Mentor: ${mentorName}`,
+      time: s.updated_at
+    })
+  })
+
+  recentEnrollments?.forEach(e => {
+    const studentProfile = e.profiles as any
+    const classData = e.classes as any
+
+    const studentName = Array.isArray(studentProfile)
+      ? studentProfile[0]?.name
+      : studentProfile?.name || 'A student'
+
+    const className = Array.isArray(classData)
+      ? classData[0]?.name
+      : classData?.name || 'a class'
+
+    activities.push({
+      icon: 'ti-user-plus',
+      iconColor: '#7c3aed',
+      text: `${studentName} enrolled in ${className}`,
+      sub: 'New enrollment',
+      time: e.enrolled_at
+    })
+  })
+
+  // Sort by time descending, take top 5
+  activities.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
+  const topActivities = activities.slice(0, 5)
 
   return (
     <div className="p-10 space-y-10">
@@ -77,37 +172,40 @@ export default async function AdminOverview() {
         <div className="lg:col-span-2 bg-white rounded-xl border border-[#e4e4e9] shadow-sm p-8">
           <h3 className="text-[14px] font-semibold text-[#111116] mb-6">Recent Platform Activity</h3>
           <div className="space-y-4">
-            {[1,2,3,4].map(i => (
-              <div key={i} className="flex items-center justify-between p-4 bg-[#f8f8fb] rounded-xl">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#9090a0] shadow-sm border border-[#e4e4e9]">
-                    <i className="ti ti-activity"></i>
-                  </div>
-                  <div>
-                    <p className="text-[13px] font-medium text-[#111116]">New student enrollment processed</p>
-                    <p className="text-[11px] text-[#9090a0]">System Log &middot; 2 hours ago</p>
+            {topActivities.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-[13px] text-[#9090a0]">No recent activity</p>
+              </div>
+            ) : (
+              topActivities.map((item, i) => (
+                <div key={i} className="flex items-center justify-between p-4 bg-[#f8f8fb] rounded-xl">
+                  <div className="flex items-center gap-4">
+                    <div 
+                      className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm border border-[#e4e4e9]"
+                      style={{ color: item.iconColor }}
+                    >
+                      <i className={`ti ${item.icon}`}></i>
+                    </div>
+                    <div>
+                      <p className="text-[13px] font-medium text-[#111116]">{item.text}</p>
+                      <p className="text-[11px] text-[#9090a0]">
+                        {item.sub} &middot; {new Date(item.time).toLocaleDateString('en-GB', {
+                          day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
                   </div>
                 </div>
-                <button className="text-[11px] font-medium text-[#4f6ef7] hover:underline">Details</button>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
-        <div className="bg-[#111116] rounded-xl p-8 text-white relative overflow-hidden">
-          <div className="relative z-10 flex flex-col h-full justify-between">
-            <div>
-              <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-md">
-                <i className="ti ti-shield-check text-2xl text-[#10b981]"></i>
-              </div>
-              <h3 className="text-[17px] font-semibold tracking-tight mb-2">System Security</h3>
-              <p className="text-[13px] text-[#9090a0] leading-relaxed">Your administration console is secured with 256-bit encryption and multi-factor authentication.</p>
-            </div>
-            <button className="w-full py-4 bg-white text-[#111116] text-[13px] font-medium rounded-xl hover:bg-gray-100 transition-all mt-10">
-              Audit Access Logs
-            </button>
-          </div>
-        </div>
+        <AuditLogsWidget 
+          completedSessions={completedSessionsCount || 0}
+          draftSessions={draftSessionsCount || 0}
+          mentorsCount={mentorsCount || 0}
+        />
       </div>
     </div>
   )

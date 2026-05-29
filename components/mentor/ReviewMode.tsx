@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import SessionApprovalPanel from '@/components/mentor/SessionApprovalPanel'
 
 interface ReviewModeProps {
   selectedStudent: any
@@ -21,6 +22,8 @@ export default function ReviewMode({
   const [session, setSession] = useState<any | null>(null)
   const [editedOutput, setEditedOutput] = useState<any | null>(null)
   const [profileData, setProfileData] = useState<any | null>(null)
+  const [courseRatings, setCourseRatings] = useState<any[]>([])
+  const [facilityFeedback, setFacilityFeedback] = useState<any | null>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [showToast, setShowToast] = useState(false)
@@ -35,10 +38,14 @@ export default function ReviewMode({
       setLoading(true)
       const [
         { data: sessionData },
-        { data: profileRes }
+        { data: profileRes },
+        { data: courseRatingsRes },
+        { data: facilityFeedbackRes }
       ] = await Promise.all([
         supabase.from('sessions').select('*').eq('id', activeSessionId).single(),
-        supabase.from('student_profiles').select('*').eq('student_id', selectedStudent.id).maybeSingle()
+        supabase.from('student_profiles').select('*').eq('student_id', selectedStudent.id).maybeSingle(),
+        fetch(`/api/session/course-ratings?session_id=${activeSessionId}`).then(r => r.json()).then(res => res.data || []),
+        fetch(`/api/session/facility-feedback?session_id=${activeSessionId}`).then(r => r.json()).then(res => res.data)
       ])
 
       if (sessionData) {
@@ -46,6 +53,8 @@ export default function ReviewMode({
         setEditedOutput(sessionData.ai_output)
       }
       setProfileData(profileRes)
+      setCourseRatings(courseRatingsRes || [])
+      setFacilityFeedback(facilityFeedbackRes)
       setLoading(false)
     }
 
@@ -66,7 +75,10 @@ export default function ReviewMode({
         .from('sessions')
         .update({
           ai_output: editedOutput,
-          status: 'completed'
+          status: 'completed',
+          session_status: 'mentor_review',
+          mentor_signed_off: true,
+          mentor_signed_off_at: new Date().toISOString()
         })
         .eq('id', activeSessionId)
 
@@ -84,9 +96,14 @@ export default function ReviewMode({
           status: 'pending'
         }))
 
+        await supabase
+          .from('tests')
+          .delete()
+          .eq('session_id', activeSessionId)
+
         const { error: tasksError } = await supabase
           .from('tests')
-          .upsert(tasks, { onConflict: 'session_id,text' })
+          .insert(tasks)
         
         if (tasksError) console.error('Tasks upsert error:', tasksError)
       }
@@ -109,6 +126,7 @@ export default function ReviewMode({
 
       setSubmitting(false)
       triggerToast('Session submitted successfully')
+      await refreshSession()
       setTimeout(() => onSubmitComplete(), 1500)
     } catch (err) {
       console.error('Final submit error:', err)
@@ -129,6 +147,11 @@ export default function ReviewMode({
     }
   }
 
+  const refreshSession = async () => {
+    const { data } = await supabase.from('sessions').select('*').eq('id', activeSessionId).single()
+    if (data) setSession(data)
+  }
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-3">
@@ -143,6 +166,19 @@ export default function ReviewMode({
       <div className="flex-1 overflow-y-auto p-8 pb-24">
         <div className="max-w-4xl mx-auto space-y-8">
           
+          {/* SESSION APPROVAL PROGRESS */}
+          {session && (
+            <SessionApprovalPanel
+              sessionId={activeSessionId}
+              sessionStatus={session.session_status || 'draft'}
+              userRole="mentor"
+              showWorkflowProgress={true}
+              mentorSignedOffAt={session.mentor_signed_off_at}
+              studentAcknowledgedAt={session.student_acknowledged_at}
+              onStatusChange={refreshSession}
+            />
+          )}
+
           {/* HEADER SECTION */}
           <div className="flex items-center justify-between mb-2">
             <div>
@@ -229,15 +265,15 @@ export default function ReviewMode({
               </div>
             </div>
 
-            {!notesCollapsed && session?.structured_input && (() => {
-              const st = session.structured_input.student || {}
-              const me = session.structured_input.mentor || {}
+            {!notesCollapsed && (session?.structured_input || courseRatings.length > 0 || facilityFeedback) && (() => {
+              const st = session?.structured_input?.student || {}
+              const me = session?.structured_input?.mentor || {}
               const renderBool = (val: any) => {
                 if (val === true) return <span className="bg-[#ecfdf5] text-[#059669] px-2 py-0.5 rounded-md font-black">YES</span>
                 if (val === false) return <span className="bg-[#fef2f2] text-[#ef4444] px-2 py-0.5 rounded-md font-black">NO</span>
                 return <span className="text-[#9090a0]">—</span>
               }
-              
+
               const sectionHeader = (title: string, icon: string) => (
                 <div className="flex items-center gap-2 mb-6 mt-10 first:mt-0 border-b border-[#f4f4f6] pb-3">
                   <i className={`ti ${icon} text-[#4f6ef7] text-lg`}></i>
@@ -247,7 +283,7 @@ export default function ReviewMode({
 
               return (
                 <div className="p-8 space-y-4 animate-in slide-in-from-top-4 duration-500">
-                  
+
                   {/* Attendance & Discipline */}
                   {me.attendance && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -295,19 +331,20 @@ export default function ReviewMode({
 
                   {/* Course Ratings & Academics */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                    {st.course_ratings?.filter((c: any) => c.name).length > 0 && (
+                    {/* Use normalized course_ratings (Phase 2) or fallback to structured_input */}
+                    {(courseRatings.length > 0 || st.course_ratings?.filter((c: any) => c.name).length > 0) && (
                       <div>
                         {sectionHeader('Course Feedback', 'ti-book')}
                         <div className="space-y-2">
-                          {st.course_ratings.filter((c: any) => c.name).map((c: any, i: number) => (
+                          {(courseRatings.length > 0 ? courseRatings : st.course_ratings?.filter((c: any) => c.name) || []).map((c: any, i: number) => (
                             <div key={i} className="flex items-center justify-between p-3 bg-[#fcfcfd] rounded-xl border border-[#f4f4f6]">
                               <div>
-                                <div className="text-[13px] font-black text-[#111116] leading-tight">{c.name}</div>
-                                {c.has_difficulty && <span className="text-[10px] text-[#ef4444] font-black uppercase tracking-widest mt-1 inline-block">Learning Gap Detected</span>}
+                                <div className="text-[13px] font-black text-[#111116] leading-tight">{c.course_name || c.name}</div>
+                                {c.teacher_informed && <span className="text-[10px] text-[#ef4444] font-black uppercase tracking-widest mt-1 inline-block">Faculty Informed</span>}
                               </div>
                               <div className="flex gap-0.5">
                                 {[...Array(5)].map((_, idx) => (
-                                  <i key={idx} className={`ti ti-star-filled text-[14px] ${idx < (c.rating || 0) ? 'text-amber-400' : 'text-[#f4f4f6]'}`}></i>
+                                  <i key={idx} className={`ti ti-star-filled text-[14px] ${idx < (c.difficulty_scale || c.rating || 0) ? 'text-amber-400' : 'text-[#f4f4f6]'}`}></i>
                                 ))}
                               </div>
                             </div>
@@ -465,6 +502,7 @@ export default function ReviewMode({
                           <th className="px-6 py-4 text-left font-black uppercase tracking-wider">Actionable Task</th>
                           <th className="px-6 py-4 text-left font-black uppercase tracking-wider w-32">Assignee</th>
                           <th className="px-6 py-4 text-left font-black uppercase tracking-wider w-32">Deadline</th>
+                          <th className="px-6 py-4 text-left font-black uppercase tracking-wider w-10"></th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-[#f4f4f6]">
@@ -510,11 +548,31 @@ export default function ReviewMode({
                                 placeholder="TBD"
                               />
                             </td>
+                            <td className="px-4 py-4 w-10">
+                              <button
+                                onClick={() => {
+                                  const tasks = editedOutput.tasks_assigned.filter((_: any, idx: number) => idx !== i)
+                                  setEditedOutput({ ...editedOutput, tasks_assigned: tasks })
+                                }}
+                                className="text-[#9090a0] hover:text-[#dc2626] transition-colors p-1 rounded"
+                              >
+                                <i className="ti ti-x text-[13px]"></i>
+                              </button>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
+                  <button
+                    onClick={() => {
+                      const tasks = [...(editedOutput.tasks_assigned || []), { task: '', assigned_to: 'student', due_by: '' }]
+                      setEditedOutput({ ...editedOutput, tasks_assigned: tasks })
+                    }}
+                    className="mt-3 flex items-center gap-2 text-[13px] font-bold text-[#4f6ef7] hover:bg-[#eef1fe] px-4 py-2 rounded-xl transition-all"
+                  >
+                    <i className="ti ti-plus text-[14px]"></i> Add task
+                  </button>
                 </div>
               </div>
             )}
@@ -522,33 +580,30 @@ export default function ReviewMode({
         </div>
       </div>
 
-      {/* STICKY BOTTOM ACTIONS */}
-      <div className="bg-white border-t border-[#e4e4e9] px-8 py-4 flex items-center justify-between shadow-[0_-4px_12px_rgba(0,0,0,0.03)] shrink-0 z-40">
-        <button 
-          onClick={handleBack}
-          className="text-[13px] font-bold text-[#52525e] hover:bg-[#f4f4f6] px-5 py-2.5 rounded-xl transition-all flex items-center gap-2"
-        >
-          <i className="ti ti-arrow-left"></i> Save & Exit
-        </button>
-        <div className="flex items-center gap-4">
+      {/* BOTTOM ACTIONS */}
+      <div className="bg-white border-t border-[#e4e4e9] px-8 py-5 flex items-center justify-between shadow-[0_-4px_12px_rgba(0,0,0,0.03)] shrink-0 z-40">
+        <div className="flex flex-col items-start">
+          <button 
+            onClick={handleBack}
+            className="px-6 py-3 text-[14px] font-bold text-[#52525e] bg-[#f4f4f6] hover:bg-[#e4e4e9] rounded-xl transition-all"
+          >
+            Keep Draft
+          </button>
+          <span className="text-[10px] text-[#9090a0] font-medium block mt-1">Saves everything so far. You can return to submit later.</span>
+        </div>
+        <div className="flex flex-col items-end">
           <button 
             onClick={handleSubmit}
             disabled={submitting}
-            className={`px-10 py-3 text-[14px] font-black rounded-xl shadow-lg transition-all flex items-center gap-3 ${
+            className={`px-8 py-3 text-[14px] font-black rounded-xl shadow-lg transition-all ${
               submitting 
                 ? 'bg-[#f4f4f6] text-[#9090a0] cursor-not-allowed' 
-                : 'bg-gradient-to-r from-[#10b981] to-[#059669] text-white hover:shadow-xl hover:shadow-[#10b981]/20 active:scale-[0.98]'
+                : 'bg-gradient-to-r from-[#7c3aed] to-[#6d28d9] text-white hover:shadow-xl hover:shadow-[#7c3aed]/20 active:scale-[0.98]'
             }`}
           >
-            {submitting ? (
-              <>
-                <div className="w-4 h-4 border-2 border-[#9090a0] border-t-transparent rounded-full animate-spin"></div>
-                Finalizing...
-              </>
-            ) : (
-              <>Archive & Submit Session <i className="ti ti-archive text-lg"></i></>
-            )}
+            {submitting ? 'Submitting…' : 'Complete & Submit for Student Review'}
           </button>
+          <span className="text-[10px] text-[#9090a0] font-medium block mt-1">Student will be asked to acknowledge this session.</span>
         </div>
       </div>
 
