@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import SessionApprovalPanel from '@/components/mentor/SessionApprovalPanel'
+import { TOPICS_ADDRESSED_ITEMS } from '@/lib/session-utils'
 
 interface ReviewModeProps {
   selectedStudent: any
@@ -30,6 +31,7 @@ export default function ReviewMode({
   const [toastMessage, setToastMessage] = useState('')
   const [profileCollapsed, setProfileCollapsed] = useState(true)
   const [notesCollapsed, setNotesCollapsed] = useState(true)
+  const [topicsAddressed, setTopicsAddressed] = useState<Record<string, boolean>>({})
 
   const supabase = createClient()
 
@@ -57,6 +59,7 @@ export default function ReviewMode({
         if (sessionData) {
           setSession(sessionData)
           setEditedOutput(sessionData.ai_output)
+          setTopicsAddressed((sessionData.topics_addressed as Record<string, boolean>) || {})
         }
         setProfileData(profileRes)
         setCourseRatings(courseRatingsRes || [])
@@ -86,7 +89,8 @@ export default function ReviewMode({
           ai_output: editedOutput,
           session_status: 'mentor_review',
           mentor_signed_off: true,
-          mentor_signed_off_at: new Date().toISOString()
+          mentor_signed_off_at: new Date().toISOString(),
+          topics_addressed: topicsAddressed
         })
         .eq('id', activeSessionId)
 
@@ -147,7 +151,7 @@ export default function ReviewMode({
     if (editedOutput) {
       await supabase
         .from('sessions')
-        .update({ ai_output: editedOutput })
+        .update({ ai_output: editedOutput, topics_addressed: topicsAddressed })
         .eq('id', activeSessionId)
       onBack(editedOutput)
     } else {
@@ -452,6 +456,31 @@ export default function ReviewMode({
             {editedOutput && (
               <div className="p-8 space-y-10 animate-in slide-in-from-bottom-4 duration-500">
                 
+                {/* Panel: Topics Addressed */}
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black text-[#9090a0] uppercase tracking-widest">Topics Addressed This Session</label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-5 bg-[#fcfcfd] border border-[#e4e4e9] rounded-2xl">
+                    {TOPICS_ADDRESSED_ITEMS.map((item) => (
+                      <label
+                        key={item.key}
+                        className="flex items-start gap-3 cursor-pointer group"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={!!topicsAddressed[item.key]}
+                          onChange={() => {
+                            setTopicsAddressed(prev => ({ ...prev, [item.key]: !prev[item.key] }))
+                          }}
+                          className="mt-0.5 w-4 h-4 rounded border-[#d1d1db] text-[#7c3aed] focus:ring-[#7c3aed]"
+                        />
+                        <span className="text-[13px] text-[#52525e] group-hover:text-[#111116] transition-colors">
+                          {item.label}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Panel: Decisions */}
                 <div className="space-y-4">
                   <label className="text-[10px] font-black text-[#9090a0] uppercase tracking-widest">Session Narrative & Decisions</label>

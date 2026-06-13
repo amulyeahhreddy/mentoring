@@ -304,7 +304,7 @@ export default function BriefingMode({ selectedStudent, mentorId, onNewSession, 
               <div className="flex items-center gap-3">
                 <h2 className="text-[17px] font-semibold text-[#111116]">{selectedStudent.name}</h2>
                 <span className="bg-[#eef1fe] text-[#3548c9] text-[11px] font-medium px-2 py-0.5 rounded-full">
-                  Session {sessions.length}
+                  Session {sessions.length > 0 ? sessions[0].session_number : 0}
                 </span>
               </div>
               <p className="text-[13px] text-[#52525e]">
@@ -318,7 +318,7 @@ export default function BriefingMode({ selectedStudent, mentorId, onNewSession, 
               disabled={exporting}
               className="bg-white border border-[#d1d1db] hover:bg-[#f8f8fb] text-[#111116] rounded-lg px-4 py-2 text-[13px] font-medium transition-all flex items-center gap-2"
             >
-              {exporting ? 'Exporting...' : 'Export diary'}
+              {exporting ? 'Exporting...' : 'Export Student Record'}
             </button>
             <button 
               onClick={onNewSession}
@@ -348,75 +348,67 @@ export default function BriefingMode({ selectedStudent, mentorId, onNewSession, 
             ))}
           </div>
 
-          {/* AI BRIEFING (Phase 1 context + Groq pre-session questions) */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <h3 className="text-[11px] uppercase tracking-widest text-[#9090a0] font-medium">AI briefing</h3>
-              {aiBriefingLoading && (
-                <span className="text-[11px] text-[#4f6ef7] animate-pulse">Generating…</span>
-              )}
-            </div>
-            {phase1Context ? (
-              <details className="bg-white border border-[#e4e4e9] rounded-xl shadow-sm">
-                <summary className="px-4 py-3 text-[13px] font-medium cursor-pointer text-[#52525e]">
-                  Phase 1 student context (included in AI prompt)
-                </summary>
-                <pre className="px-4 pb-4 text-[11px] text-[#52525e] whitespace-pre-wrap font-sans leading-relaxed max-h-48 overflow-y-auto">
-                  {phase1Context}
-                </pre>
-              </details>
-            ) : null}
-            {!aiBriefingLoading && presessionQuestions.length > 0 && (
-              <div className="bg-white border border-[#e4e4e9] rounded-xl shadow-sm p-4 space-y-3">
-                {presessionRedFlags.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-[11px] font-bold uppercase text-[#9090a0]">AI red flags</p>
-                    {presessionRedFlags.map((flag: { severity?: string; finding?: string }, i: number) => (
-                      <p key={i} className="text-[13px] text-[#111116]">
-                        <span className="font-semibold text-[#dc2626]">{flag.severity}: </span>
-                        {flag.finding}
-                      </p>
-                    ))}
-                  </div>
-                )}
-                <p className="text-[11px] font-bold uppercase text-[#9090a0]">Suggested questions</p>
-                <ul className="space-y-2">
-                  {presessionQuestions.slice(0, 6).map((q: { id?: string; text?: string; reason?: string }) => (
-                    <li key={q.id} className="text-[13px] text-[#52525e]">
-                      <span className="font-medium text-[#111116]">{q.text}</span>
-                      {q.reason ? <span className="block text-[12px] text-[#9090a0] mt-0.5">{q.reason}</span> : null}
-                    </li>
-                  ))}
-                </ul>
+          {/* AI BRIEFING (Phase 1 context) */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <h3 className="text-[11px] uppercase tracking-widest text-[#9090a0] font-medium">AI briefing</h3>
               </div>
-            )}
-          </div>
+              {phase1Context ? (
+                <details className="bg-white border border-[#e4e4e9] rounded-xl shadow-sm">
+                  <summary className="px-4 py-3 text-[13px] font-medium cursor-pointer text-[#52525e]">
+                    Phase 1 student context (included in AI prompt)
+                  </summary>
+                  <pre className="px-4 pb-4 text-[11px] text-[#52525e] whitespace-pre-wrap font-sans leading-relaxed max-h-48 overflow-y-auto">
+                    {phase1Context}
+                  </pre>
+                </details>
+              ) : null}
+            </div>
+          )}
 
           {/* RISK FLAGS */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <h3 className="text-[11px] uppercase tracking-widest text-[#9090a0] font-medium">Risk flags</h3>
-              <span className="bg-[#fef2f2] text-[#dc2626] text-[11px] font-medium px-2 py-0.5 rounded-full">{flags.length}</span>
+              {!aiBriefingLoading && (
+                <span className="bg-[#fef2f2] text-[#dc2626] text-[11px] font-medium px-2 py-0.5 rounded-full">{flags.length + presessionRedFlags.length}</span>
+              )}
             </div>
             <div className="grid gap-3">
-              {flags.length === 0 ? (
+              {aiBriefingLoading ? (
+                <div className="bg-white border border-[#e4e4e9] rounded-xl shadow-sm p-4 space-y-4 animate-pulse">
+                  <div className="h-4 bg-[#e4e4e9] rounded w-1/3"></div>
+                  <div className="space-y-2">
+                    <div className="h-3 bg-[#f4f4f6] rounded w-full"></div>
+                    <div className="h-3 bg-[#f4f4f6] rounded w-5/6"></div>
+                  </div>
+                </div>
+              ) : flags.length === 0 && presessionRedFlags.length === 0 ? (
                 <div className="bg-white border border-[#e4e4e9] p-4 rounded-xl shadow-sm flex items-center gap-3">
                   <div className="w-2 h-2 rounded-full bg-[#059669]" />
                   <span className="text-[13px] text-[#059669] font-medium">No active risk flags</span>
                 </div>
               ) : (
-                flags.map((flag, i) => (
-                  <div key={i} className={`bg-white border border-[#e4e4e9] rounded-xl shadow-sm p-4 border-l-[3px] flex items-center gap-4 ${
-                    flag.severity === 'critical' ? 'border-l-[#dc2626]' : flag.severity === 'high' ? 'border-l-[#dc2626]' : 'border-l-[#d97706]'
-                  }`}>
-                    <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
-                      flag.severity === 'critical' || flag.severity === 'high' ? 'bg-[#fef2f2] text-[#dc2626]' : 'bg-[#fffbeb] text-[#92400e]'
+                <>
+                  {[
+                    ...flags.map(f => ({ severity: f.severity?.toLowerCase(), desc: f.desc })),
+                    ...presessionRedFlags.map((f: any) => ({ severity: f.severity?.toLowerCase(), desc: f.finding }))
+                  ].map((flag, i) => (
+                    <div key={`flag-${i}`} className={`bg-white border border-[#e4e4e9] rounded-xl shadow-sm p-4 border-l-[3px] flex items-center gap-4 ${
+                      flag.severity === 'critical' ? 'border-l-[#dc2626]' : flag.severity === 'high' ? 'border-l-[#dc2626]' : 'border-l-[#d97706]'
                     }`}>
-                      {flag.severity}
-                    </span>
-                    <p className="text-[13px] text-[#111116] font-medium">{flag.desc}</p>
-                  </div>
-                ))
+                      <div className="flex flex-col items-center gap-1 min-w-[60px]">
+                        <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full capitalize ${
+                          flag.severity === 'critical' || flag.severity === 'high' ? 'bg-[#fef2f2] text-[#dc2626]' : 'bg-[#fffbeb] text-[#92400e]'
+                        }`}>
+                          {flag.severity}
+                        </span>
+                      </div>
+                      <p className="text-[13px] text-[#111116] font-medium">{flag.desc}</p>
+                    </div>
+                  ))}
+                </>
               )}
             </div>
           </div>
@@ -429,7 +421,12 @@ export default function BriefingMode({ selectedStudent, mentorId, onNewSession, 
             </div>
             <div className="space-y-2">
               {tasks.length === 0 ? (
-                <p className="text-[13px] text-[#9090a0] italic">No tasks assigned</p>
+                <div className="flex items-center gap-3">
+                  <p className="text-[13px] text-[#9090a0] italic">No tasks assigned</p>
+                  <button className="text-[12px] font-medium text-[#4f6ef7] hover:underline bg-[#f8f8fb] px-3 py-1 rounded-md border border-[#e4e4e9]">
+                    + Create Task
+                  </button>
+                </div>
               ) : (
                 tasks.map(task => {
                   const isCompleted = task.status === 'completed';
@@ -661,16 +658,6 @@ export default function BriefingMode({ selectedStudent, mentorId, onNewSession, 
         </div>
       </div>
 
-      {/* STICKY BOTTOM BAR */}
-      <div className="bg-white border-t border-[#e4e4e9] p-4 flex items-center justify-between px-8 shadow-[0_-1px_3px_rgba(0,0,0,0.06)] shrink-0">
-        <p className="text-[13px] text-[#52525e]">Mentoring Diary Record &middot; Full History</p>
-        <button 
-          onClick={handleExport}
-          className="bg-white border border-[#d1d1db] hover:bg-[#f8f8fb] text-[#111116] rounded-lg px-4 py-2 text-[13px] font-medium transition-all"
-        >
-          {exporting ? 'Generating PDF...' : 'Download Full Record'}
-        </button>
-      </div>
     </div>
   )
 }

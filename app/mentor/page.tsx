@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/client'
 import StudentList from '@/components/mentor/StudentList'
 import BriefingMode from '@/components/mentor/BriefingMode'
 import SessionMode from '@/components/mentor/SessionMode'
-import ValidateMode from '@/components/mentor/ValidateMode'
+import RecordMode from '@/components/mentor/RecordMode'
 import ReviewMode from '@/components/mentor/ReviewMode'
 
 export default function MentorPage() {
@@ -107,7 +107,7 @@ export default function MentorPage() {
                   <div className="flex items-center gap-2 px-2">
                     <div className={`w-2 h-2 rounded-full transition-all duration-300 ${isActive ? 'bg-[#4f6ef7] ring-4 ring-[#4f6ef7]/15' : isCompleted ? 'bg-[#059669]' : 'border border-[#d1d1db] bg-white'}`} />
                     <span className={`text-[11px] font-medium capitalize tracking-wide transition-colors ${isActive ? 'text-[#4f6ef7]' : isCompleted ? 'text-[#9090a0] line-through' : 'text-[#9090a0]'}`}>
-                      {m}
+                      {m === 'briefing' ? 'Overview' : m === 'validate' ? 'Record' : m}
                     </span>
                   </div>
                   {idx < arr.length - 1 && <div className="w-8 h-[1px] bg-[#e4e4e9]" />}
@@ -135,7 +135,11 @@ export default function MentorPage() {
                 </div>
                 <div>
                   <h3 className="text-[15px] font-semibold text-[#111116] mb-1">Select a student</h3>
-                  <p className="text-[#9090a0] text-[13px]">Choose a student from the sidebar to begin or resume a mentoring session.</p>
+                  <p className="text-[#9090a0] text-[13px] mb-4">Choose a student from the sidebar to begin or resume a mentoring session.</p>
+                  <div className="flex gap-3 justify-center">
+                    <button className="px-4 py-2 bg-[#4f6ef7] text-white rounded-lg text-[13px] font-medium hover:bg-[#3f5ce5] transition-colors shadow-sm">Add Student</button>
+                    <button className="px-4 py-2 bg-white border border-[#d1d1db] text-[#111116] rounded-lg text-[13px] font-medium hover:bg-[#f4f4f6] transition-colors shadow-sm">Join Class</button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -157,7 +161,7 @@ export default function MentorPage() {
               onComplete={() => setMode('validate')}
             />
           ) : mode === 'validate' ? (
-            <ValidateMode
+            <RecordMode
               selectedStudent={selectedStudent}
               mentorId={mentorId}
               activeSessionId={activeSessionId!}

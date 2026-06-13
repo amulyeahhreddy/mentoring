@@ -14,7 +14,7 @@ interface Question {
   checked: boolean
 }
 
-interface ValidateModeProps {
+interface RecordModeProps {
   selectedStudent: any
   mentorId: string
   activeSessionId: string
@@ -24,7 +24,7 @@ interface ValidateModeProps {
   onBack: () => void
 }
 
-export default function ValidateMode({
+export default function RecordMode({
   selectedStudent,
   mentorId,
   activeSessionId,
@@ -32,7 +32,7 @@ export default function ValidateMode({
   setAiOutput,
   onNext,
   onBack
-}: ValidateModeProps) {
+}: RecordModeProps) {
   // --- STATE ---
   const [audioStage, setAudioStage] = useState<'idle' | 'uploading' | 'transcribing' | 'extracting' | 'done' | 'error'>('idle')
   const [transcript, setTranscript] = useState<string | null>(null)
@@ -396,13 +396,15 @@ export default function ValidateMode({
   )
 
   const getQuestionTypeBadge = (type: string) => {
-    switch (type) {
-      case 'carryforward': return <span className="bg-orange-50 text-orange-700 text-[11px] px-2 py-0.5 rounded-full font-medium">Carry forward</span>
-      case 'task_followup': return <span className="bg-[rgba(79,110,247,0.08)] text-blue-700 text-[11px] px-2 py-0.5 rounded-full font-medium">Follow up</span>
-      case 'academic': return <span className="bg-[rgba(124,58,237,0.08)] text-[#7c3aed] text-[11px] px-2 py-0.5 rounded-full font-medium">Academic</span>
-      case 'ai_suggested': return <span className="bg-[rgba(16,185,129,0.08)] text-[#10b981] text-[11px] px-2 py-0.5 rounded-full font-medium">AI suggested</span>
-      default: return null
-    }
+    const mapping: Record<string, { label: string, className: string }> = {
+      carryforward: { label: 'Previous Session', className: 'bg-orange-50 text-orange-700' },
+      task_followup: { label: 'Task Follow-up', className: 'bg-[rgba(79,110,247,0.08)] text-blue-700' },
+      academic: { label: 'Academic', className: 'bg-[rgba(124,58,237,0.08)] text-[#7c3aed]' },
+      ai_suggested: { label: 'AI Suggestion', className: 'bg-[rgba(16,185,129,0.08)] text-[#10b981]' }
+    };
+    const config = mapping[type];
+    if (!config) return null;
+    return <span className={`${config.className} text-[11px] px-2 py-0.5 rounded-full font-medium`}>{config.label}</span>;
   }
 
   const toggleQuestion = (id: string) => {
@@ -481,7 +483,7 @@ export default function ValidateMode({
                 <div className="p-6 border-b border-[#f4f4f6] flex items-center justify-between bg-[#fcfcfd]">
                   <div className="flex items-center gap-3">
                     <span className="text-[10px] font-black text-[#4f6ef7] uppercase tracking-[0.15em]">Step 1</span>
-                    <h4 className="text-[13px] font-bold text-[#111116] uppercase tracking-widest">Pre-Session Checklist</h4>
+                    <h4 className="text-[13px] font-bold text-[#111116] uppercase tracking-widest">Discussion Points</h4>
                   </div>
                   <span className="bg-[#eef1fe] text-[#4f6ef7] text-[10px] font-black px-2 py-0.5 rounded-full">
                     {presessionQuestions.length} ITEMS

@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Mentoring Assistant",
+  title: "MentorOS",
   description: "Layer 1 upload interface for mentoring sessions",
 };
 

@@ -346,19 +346,19 @@ export default function SessionMode({
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-3">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold transition-all ${phase === 'student' ? 'bg-[#4f6ef7] text-white' : 'bg-[#eef1fe] text-[#3548c9]'}`}>1</div>
-            <span className={`text-[13px] font-semibold ${phase === 'student' ? 'text-[#111116]' : 'text-[#9090a0]'}`}>Student Section</span>
+            <span className={`text-[13px] font-semibold ${phase === 'student' ? 'text-[#111116]' : 'text-[#9090a0]'}`}>Student Entry</span>
           </div>
           <div className="w-8 h-[1px] bg-[#e4e4e9]" />
           <div className="flex items-center gap-3">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold transition-all ${phase === 'mentor' ? 'bg-[#7c3aed] text-white' : 'bg-[#f4f4f6] text-[#9090a0]'}`}>2</div>
-            <span className={`text-[13px] font-semibold ${phase === 'mentor' ? 'text-[#111116]' : 'text-[#9090a0]'}`}>Mentor Section</span>
+            <span className={`text-[13px] font-semibold ${phase === 'mentor' ? 'text-[#111116]' : 'text-[#9090a0]'}`}>Mentor Entry</span>
           </div>
         </div>
         
         <div className="flex items-center gap-4">
           <div className="text-right">
             <div className="text-[13px] font-bold text-[#111116]">{selectedStudent.name}</div>
-            <div className="text-[11px] text-[#9090a0]">Session {sessionNumber} &middot; {phase === 'student' ? 'Student Entry' : 'Mentor Review'}</div>
+            <div className="text-[11px] text-[#9090a0]">Session {sessionNumber} &middot; {phase === 'student' ? 'Student Entry' : 'Mentor Entry'}</div>
           </div>
         </div>
       </div>
@@ -374,7 +374,7 @@ export default function SessionMode({
             </div>
             <div className="text-right">
               <div className="text-[14px] font-bold text-[#111116]">PART A</div>
-              <div className="text-[10px] uppercase text-[#9090a0] font-bold">Student Self-Record</div>
+              <div className="text-[10px] uppercase text-[#9090a0] font-bold">Student Entry</div>
             </div>
           </div>
 
@@ -390,29 +390,35 @@ export default function SessionMode({
                   <p className="text-[11px] text-[#9090a0] font-bold uppercase tracking-wider">Is overall attendance above 90% in all classes?</p>
                 </div>
               </div>
-              <div className="flex bg-[#f4f4f6] rounded-md p-1">
+              <div className="flex bg-[#f4f4f6] rounded-lg p-1 border border-[#e4e4e9] shadow-inner">
                 <button 
                   type="button"
                   disabled={viewMode}
-                  className={`px-4 py-1.5 text-[11px] font-black rounded-lg transition-all ${attendanceAbove90 === true ? 'bg-white shadow text-[#15803d]' : 'text-[#9090a0]'}`}
+                  className={`flex items-center gap-2 px-5 py-2 text-[12px] font-bold rounded-md transition-all ${attendanceAbove90 === true ? 'bg-[#f0fdf4] border border-[#bbf7d0] shadow-sm text-[#15803d]' : 'text-[#9090a0] border border-transparent hover:text-[#52525e]'}`}
                   onClick={async () => {
                     setAttendanceAbove90(true)
                     if (!viewMode && activeSessionId) {
                       await supabase.from('sessions').update({ attendance_above_90: true }).eq('id', activeSessionId)
                     }
                   }}
-                >YES</button>
+                >
+                  {attendanceAbove90 === true && <i className="ti ti-check"></i>}
+                  YES
+                </button>
                 <button 
                   type="button"
                   disabled={viewMode}
-                  className={`px-4 py-1.5 text-[11px] font-black rounded-lg transition-all ${attendanceAbove90 === false ? 'bg-white shadow text-[#dc2626]' : 'text-[#9090a0]'}`}
+                  className={`flex items-center gap-2 px-5 py-2 text-[12px] font-bold rounded-md transition-all ${attendanceAbove90 === false ? 'bg-[#fef2f2] border border-[#fecaca] shadow-sm text-[#dc2626]' : 'text-[#9090a0] border border-transparent hover:text-[#52525e]'}`}
                   onClick={async () => {
                     setAttendanceAbove90(false)
                     if (!viewMode && activeSessionId) {
                       await supabase.from('sessions').update({ attendance_above_90: false }).eq('id', activeSessionId)
                     }
                   }}
-                >NO</button>
+                >
+                  {attendanceAbove90 === false && <i className="ti ti-x"></i>}
+                  NO
+                </button>
               </div>
             </div>
 
@@ -421,22 +427,24 @@ export default function SessionMode({
                 {/* 1. COURSE RATINGS */}
                 <section className="space-y-6">
                   <div className="flex items-center gap-3 border-b border-[#f4f4f6] pb-3">
-                    <span className="text-[11px] font-black text-[#4f6ef7] uppercase tracking-wider">SEC I</span>
                     <h4 className="text-[13px] font-bold uppercase tracking-widest text-[#111116]">Course Understanding</h4>
                   </div>
                   
                   <div className="space-y-4">
                     {(formData.student.course_ratings || []).map((course: any, idx: number) => (
                       <div key={idx} className="p-5 bg-[#fcfcfd] border border-[#e4e4e9] rounded-xl space-y-4 group transition-all hover:border-[#4f6ef7]/30 hover:shadow-sm">
-                        <div className="flex gap-4">
-                          <input 
-                            type="text" 
-                            placeholder="Course Name (e.g. Data Structures)" 
-                            className="flex-1 bg-white border border-[#e4e4e9] rounded-lg px-4 py-2 text-[13px] focus:border-[#4f6ef7] outline-none transition-all"
-                            value={course.name || ''}
-                            onChange={(e) => updateStudentArray('course_ratings', idx, 'name', e.target.value)}
-                          />
-                          <div className="flex items-center px-3 bg-white border border-[#e4e4e9] rounded-lg">
+                        <div className="flex gap-4 items-end">
+                          <div className="flex-1 space-y-1.5">
+                            <label className="text-[11px] font-bold text-[#9090a0] uppercase tracking-wider block">Course Name</label>
+                            <input 
+                              type="text" 
+                              placeholder="e.g. Data Structures" 
+                              className="w-full bg-white border border-[#e4e4e9] rounded-lg px-4 py-2 text-[13px] focus:border-[#4f6ef7] outline-none transition-all"
+                              value={course.name || ''}
+                              onChange={(e) => updateStudentArray('course_ratings', idx, 'name', e.target.value)}
+                            />
+                          </div>
+                          <div className="flex items-center px-3 h-[38px] bg-white border border-[#e4e4e9] rounded-lg">
                             {[1,2,3,4,5].map(star => (
                               <button 
                                 key={star}
@@ -465,12 +473,15 @@ export default function SessionMode({
 
                         {course.has_difficulty && (
                           <div className="space-y-4 pt-2 animate-in slide-in-from-top-2 duration-200">
-                            <textarea 
-                              placeholder="Reason for difficulty..." 
-                              className="w-full p-3 bg-white border border-[#fca5a5]/30 rounded-lg text-[13px] outline-none focus:border-[#ef4444] transition-all min-h-[80px]"
-                              value={course.reason || ''}
-                              onChange={(e) => updateStudentArray('course_ratings', idx, 'reason', e.target.value)}
-                            />
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-bold text-[#9090a0] uppercase tracking-wider block">Reason for difficulty</label>
+                              <textarea 
+                                placeholder="e.g. Fast pace, lack of prior knowledge..." 
+                                className="w-full p-3 bg-white border border-[#fca5a5]/30 rounded-lg text-[13px] outline-none focus:border-[#ef4444] transition-all min-h-[80px]"
+                                value={course.reason || ''}
+                                onChange={(e) => updateStudentArray('course_ratings', idx, 'reason', e.target.value)}
+                              />
+                            </div>
                             <div className="flex items-center gap-4">
                               <span className="text-[12px] text-[#52525e]">Informed Faculty?</span>
                               <div className="flex gap-2">
@@ -508,7 +519,6 @@ export default function SessionMode({
                 {sessionNumber === 1 && (
                   <section className="space-y-6">
                     <div className="flex items-center gap-3 border-b border-[#f4f4f6] pb-3">
-                      <span className="text-[11px] font-black text-[#4f6ef7] uppercase tracking-wider">SEC II</span>
                       <h4 className="text-[13px] font-bold uppercase tracking-widest text-[#111116]">Study Habits</h4>
                     </div>
                     <div className="grid grid-cols-2 gap-x-8 gap-y-6">
@@ -541,20 +551,22 @@ export default function SessionMode({
                 {/* 3. CO-CURRICULAR */}
                 <section className="space-y-6">
                   <div className="flex items-center gap-3 border-b border-[#f4f4f6] pb-3">
-                    <span className="text-[11px] font-black text-[#4f6ef7] uppercase tracking-wider">SEC III</span>
                     <h4 className="text-[13px] font-bold uppercase tracking-widest text-[#111116]">Co-Curricular Activities</h4>
                   </div>
                   <div className="space-y-4">
                     {(formData.student.cocurricular_activities || []).map((act: any, idx: number) => (
                       <div key={idx} className="p-5 bg-[#fcfcfd] border border-[#e4e4e9] rounded-xl space-y-4">
-                        <div className="flex gap-4">
-                          <input 
-                            type="text" placeholder="Activity Title (e.g. Hackathon)" 
-                            className="flex-1 bg-white border border-[#e4e4e9] rounded-lg px-4 py-2 text-[13px] focus:border-[#4f6ef7] outline-none transition-all"
-                            value={act.name || ''}
-                            onChange={(e) => updateStudentArray('cocurricular_activities', idx, 'name', e.target.value)}
-                          />
-                          <div className="flex bg-[#f4f4f6] rounded-md p-0.5">
+                        <div className="flex gap-4 items-end">
+                          <div className="flex-1 space-y-1.5">
+                            <label className="text-[11px] font-bold text-[#9090a0] uppercase tracking-wider block">Activity Title</label>
+                            <input 
+                              type="text" placeholder="e.g. Hackathon" 
+                              className="w-full bg-white border border-[#e4e4e9] rounded-lg px-4 py-2 text-[13px] focus:border-[#4f6ef7] outline-none transition-all"
+                              value={act.name || ''}
+                              onChange={(e) => updateStudentArray('cocurricular_activities', idx, 'name', e.target.value)}
+                            />
+                          </div>
+                          <div className="flex bg-[#f4f4f6] rounded-md p-0.5 h-[38px]">
                             {['Member', 'Participated'].map(role => (
                               <button 
                                 key={role}
@@ -564,12 +576,15 @@ export default function SessionMode({
                             ))}
                           </div>
                         </div>
-                        <input 
-                          type="text" placeholder="Achievement / Participation Details" 
-                          className="w-full bg-white border border-[#e4e4e9] rounded-lg px-4 py-2 text-[13px] focus:border-[#4f6ef7] outline-none transition-all"
-                          value={act.details || ''}
-                          onChange={(e) => updateStudentArray('cocurricular_activities', idx, 'details', e.target.value)}
-                        />
+                        <div className="space-y-1.5">
+                          <label className="text-[11px] font-bold text-[#9090a0] uppercase tracking-wider block">Achievement / Participation Details</label>
+                          <input 
+                            type="text" placeholder="e.g. Won 1st place, attended workshop..." 
+                            className="w-full bg-white border border-[#e4e4e9] rounded-lg px-4 py-2 text-[13px] focus:border-[#4f6ef7] outline-none transition-all"
+                            value={act.details || ''}
+                            onChange={(e) => updateStudentArray('cocurricular_activities', idx, 'details', e.target.value)}
+                          />
+                        </div>
                       </div>
                     ))}
                     <button 
@@ -586,7 +601,6 @@ export default function SessionMode({
                 {/* 4. FACILITY FEEDBACK */}
                 <section className="space-y-6">
                   <div className="flex items-center gap-3 border-b border-[#f4f4f6] pb-3">
-                    <span className="text-[11px] font-black text-[#4f6ef7] uppercase tracking-wider">SEC IV</span>
                     <h4 className="text-[13px] font-bold uppercase tracking-widest text-[#111116]">Facility Feedback</h4>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -612,7 +626,7 @@ export default function SessionMode({
                 <button 
                   onClick={handleStudentDone}
                   className="w-full py-4 bg-[#4f6ef7] hover:bg-[#3d5ce8] text-white font-bold rounded-xl shadow-lg shadow-[#4f6ef7]/20 transition-all active:scale-[0.98] text-[15px] mt-8"
-                >Hand to Mentor for Review &rarr;</button>
+                >Continue to Mentor Entry &rarr;</button>
               </>
             ) : (
               <>
@@ -637,7 +651,6 @@ export default function SessionMode({
                 {/* MENTOR SECTION PART B */}
                 <section className="space-y-6">
                   <div className="flex items-center gap-3 border-b border-[#f4f4f6] pb-3">
-                    <span className="text-[11px] font-black text-[#7c3aed] uppercase tracking-wider">SEC I</span>
                     <h4 className="text-[13px] font-bold uppercase tracking-widest text-[#111116]">Attendance & Discipline</h4>
                   </div>
                                 {/* 1. ATTENDANCE & DISCIPLINE CONTENT */}
@@ -662,7 +675,6 @@ export default function SessionMode({
 
               <section className="space-y-6">
                 <div className="flex items-center gap-3 border-b border-[#f4f4f6] pb-3">
-                  <span className="text-[11px] font-black text-[#7c3aed] uppercase tracking-wider">SEC II</span>
                   <h4 className="text-[13px] font-bold uppercase tracking-widest text-[#111116]">Mentor Assessment</h4>
                 </div>
                 <div className="space-y-4">
@@ -687,35 +699,12 @@ export default function SessionMode({
                 </div>
               </section>
 
-              {/* Topics Addressed + Indisciplinary Activity */}
+              {/* Indisciplinary Activity */}
               <section className="space-y-6">
                 <div className="flex items-center gap-3 border-b border-[#f4f4f6] pb-3">
-                  <span className="text-[11px] font-black text-[#7c3aed] uppercase tracking-wider">SEC IIb</span>
                   <h4 className="text-[13px] font-bold uppercase tracking-widest text-[#111116]">
-                    Topics Addressed This Session
+                    Indisciplinary Activity
                   </h4>
-                </div>
-                <div className="grid grid-cols-1 gap-3 p-5 bg-[#fcfcfd] border border-[#e4e4e9] rounded-xl">
-                  {TOPICS_ADDRESSED_ITEMS.map((item) => (
-                    <label
-                      key={item.key}
-                      className="flex items-start gap-3 cursor-pointer group"
-                    >
-                      <input
-                        type="checkbox"
-                        disabled={viewMode}
-                        checked={!!topicsAddressed[item.key]}
-                        onChange={() => {
-                          toggleTopic(item.key)
-                          if (!viewMode) saveSessionColumns()
-                        }}
-                        className="mt-0.5 w-4 h-4 rounded border-[#d1d1db] text-[#7c3aed] focus:ring-[#7c3aed]"
-                      />
-                      <span className="text-[13px] text-[#52525e] group-hover:text-[#111116] transition-colors">
-                        {item.label}
-                      </span>
-                    </label>
-                  ))}
                 </div>
 
                 <div className="space-y-4 p-5 bg-[#fcfcfd] border border-[#e4e4e9] rounded-xl">
@@ -792,16 +781,16 @@ export default function SessionMode({
           <div className="max-w-xs space-y-6">
             <div className="w-20 h-20 bg-[#ecfdf5] text-[#059669] rounded-full flex items-center justify-center text-3xl mx-auto shadow-sm">✓</div>
             <div>
-              <h3 className="text-[18px] font-bold text-[#111116] mb-2">Section A Complete</h3>
-              <p className="text-[13px] text-[#52525e] leading-relaxed">Student records have been saved. Please hand the device back to the mentor to complete Part B.</p>
+              <h3 className="text-[18px] font-bold text-[#111116] mb-2">Student Entry Complete</h3>
+              <p className="text-[13px] text-[#52525e] leading-relaxed">Student records have been saved. Please hand the device back to the mentor.</p>
             </div>
             <button 
               onClick={() => {
                 setPhase('mentor');
                 setShowOverlay(false);
               }}
-              className="w-full py-3 bg-[#111116] text-white font-bold rounded-xl text-[13px]"
-            >I am the Mentor</button>
+              className="w-full py-3 bg-[#111116] hover:bg-black text-white font-bold rounded-xl shadow-lg transition-all text-[14px]"
+            >Continue to Mentor Entry</button>
           </div>
         </div>
       )}
