@@ -17,7 +17,7 @@ interface BriefingModeProps {
 export default function BriefingMode({ selectedStudent, mentorId, onNewSession, onSelectSession }: BriefingModeProps) {
   const [loading, setLoading] = useState(true)
   const [sessions, setSessions] = useState<any[]>([])
-  const [tests, setTests] = useState<any[]>([])
+  const [tasks, setTasks] = useState<any[]>([])
   const [semRecords, setSemRecords] = useState<any[]>([])
   const [profileData, setProfileData] = useState<any>(null)
   const [exporting, setExporting] = useState(false)
@@ -41,27 +41,27 @@ export default function BriefingMode({ selectedStudent, mentorId, onNewSession, 
 
         const [
           { data: sessionsData },
-          { data: testsData },
+          { data: tasksData },
           { data: semRecordsData },
           { data: profileDataResponse },
           { data: fortnightlyData }
         ] = await Promise.all([
           supabase.from('sessions').select('id, session_number, session_date, status, session_status, structured_input, ai_output, created_at').eq('student_id', studentId).order('session_date', { ascending: false }),
-          supabase.from('tests').select('id, text, assigned_to, due_by, status, created_at').eq('student_id', studentId),
+          supabase.from('tasks').select('id, text, assigned_to, due_by, status, created_at').eq('student_id', studentId),
           supabase.from('btech_sem_records').select('id, year, semester, sgpa, cgpa, credits_earned, backlogs').eq('student_id', studentId).order('year', { ascending: true }).order('semester', { ascending: true }),
-          supabase.from('student_profiles').select('data').eq('student_id', studentId).single(),
+          supabase.from('profiles').select('*').eq('id', studentId).single(),
           supabase.from('fortnightly_attendance').select('attendance_percentage, fortnight_number').eq('student_id', studentId).order('fortnight_number', { ascending: false }).limit(8)
         ])
 
         if (!isMounted) return
 
         const sessionsList = sessionsData || []
-        const testsList = testsData || []
+        const tasksList = tasksData || []
         const semList = semRecordsData || []
-        const profilePayload = profileDataResponse?.data || {}
+        const profilePayload = profileDataResponse || {}
 
         setSessions(sessionsList)
-        setTests(testsList)
+        setTasks(tasksList)
         setSemRecords(semList)
         setProfileData(profilePayload)
         setFortnightlyAttendance(fortnightlyData || [])
@@ -74,7 +74,7 @@ export default function BriefingMode({ selectedStudent, mentorId, onNewSession, 
 
         if (isMounted) setAiBriefingLoading(true)
         try {
-          const pendingTasks = testsList.filter((t: { status?: string }) => t.status !== 'completed')
+          const pendingTasks = tasksList.filter((t: { status?: string }) => t.status !== 'completed')
           const overallAttendance =
             fortnightlyAttendance.length > 0
               ? fortnightlyAttendance[0]?.attendance_percentage
@@ -163,8 +163,8 @@ export default function BriefingMode({ selectedStudent, mentorId, onNewSession, 
   }
 
   const completeTask = async (taskId: string) => {
-    setTests(prev => prev.map(t => t.id === taskId ? { ...t, status: 'completed' } : t))
-    await supabase.from('tests').update({ status: 'completed' }).eq('id', taskId)
+    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'completed' } : t))
+    await supabase.from('tasks').update({ status: 'completed' }).eq('id', taskId)
   }
 
   if (loading) {
@@ -227,7 +227,7 @@ export default function BriefingMode({ selectedStudent, mentorId, onNewSession, 
     }
   }
 
-  const pendingTasks = tests.filter(t => t.status !== 'completed')
+  const pendingTasks = tasks.filter(t => t.status !== 'completed')
   const overdueTasks = pendingTasks.filter(t => t.due_by && new Date(t.due_by) < new Date())
   const openTasksCount = pendingTasks.length
   let openTasksSub = { text: 'All on track', color: 'text-green-500' }
@@ -271,10 +271,10 @@ export default function BriefingMode({ selectedStudent, mentorId, onNewSession, 
     low_attendance_subjects: [],
     overdue_tasks: overdueTasks.map(t => ({ task: t.text, due_by: t.due_by })),
     task_completion_history: [
-      tests.length > 0 ? (tests.filter(t => t.status === 'completed').length / tests.length) * 100 : 0
+      tasks.length > 0 ? (tasks.filter(t => t.status === 'completed').length / tasks.length) * 100 : 0
     ],
-    total_tasks_assigned: tests.length,
-    total_tasks_completed: tests.filter(t => t.status === 'completed').length,
+    total_tasks_assigned: tasks.length,
+    total_tasks_completed: tasks.filter(t => t.status === 'completed').length,
     tone_history: sessions.slice(0, 4).map(s => s.ai_output?.emotional_behavioral?.overall_tone).filter(Boolean).reverse(),
     engagement_history: sessions.slice(0, 4).map(s => s.ai_output?.emotional_behavioral?.engagement_level).filter(Boolean).reverse(),
     goals: [
@@ -348,7 +348,7 @@ export default function BriefingMode({ selectedStudent, mentorId, onNewSession, 
             ))}
           </div>
 
-          {/* AI BRIEFING (Phase 1 context + Ollama pre-session questions) */}
+          {/* AI BRIEFING (Phase 1 context + Groq pre-session questions) */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <h3 className="text-[11px] uppercase tracking-widest text-[#9090a0] font-medium">AI briefing</h3>
@@ -428,10 +428,10 @@ export default function BriefingMode({ selectedStudent, mentorId, onNewSession, 
               <span className="bg-[#f8f8fb] text-[#52525e] text-[11px] font-medium px-2 py-0.5 rounded-full">{pendingTasks.length}</span>
             </div>
             <div className="space-y-2">
-              {tests.length === 0 ? (
+              {tasks.length === 0 ? (
                 <p className="text-[13px] text-[#9090a0] italic">No tasks assigned</p>
               ) : (
-                tests.map(task => {
+                tasks.map(task => {
                   const isCompleted = task.status === 'completed';
                   const isOverdue = !isCompleted && task.due_by && new Date(task.due_by) < new Date();
                   return (
@@ -481,7 +481,7 @@ export default function BriefingMode({ selectedStudent, mentorId, onNewSession, 
                 const personalConcerns = (session.structured_input?.discussion?.personal_concerns || []).slice(0, 1);
                 const allConcerns = [...academicConcerns, ...personalConcerns];
                 const sentiment = session.ai_output?.student_state?.sentiment?.toLowerCase();
-                const taskCount = tests.filter(t => t.session_id === session.id).length;
+                const taskCount = tasks.filter(t => t.session_id === session.id).length;
                 const statusBadge = getSessionStatusBadge(session);
                 const isDraft = (session.session_status || session.status) === 'draft';
 

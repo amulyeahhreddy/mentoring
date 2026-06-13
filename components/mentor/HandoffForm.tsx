@@ -25,7 +25,11 @@ export default function HandoffForm({ studentId, assignmentId, initialData }: { 
         handoff_notes: `Academic Summary: ${data.academic_summary}\n\nBehavioral Notes: ${data.behavioral_notes}\n\nCareer Guidance: ${data.career_guidance}`,
         handoff_unresolved_recommendations: data.handoff_unresolved_recommendations,
         handoff_completed: true,
-        handoff_completed_at: new Date().toISOString()
+        handoff_completed_at: new Date().toISOString(),
+        year_label: data.year_label,
+        academic_year: data.academic_year,
+        designation: data.designation,
+        department: data.department
       }
       
       const res = await fetch(`/api/students/${studentId}/mentor-assignments`, {
@@ -65,7 +69,7 @@ export default function HandoffForm({ studentId, assignmentId, initialData }: { 
       <div className="space-y-6">
         <div className="bg-green-50 border border-green-200 p-6 rounded-xl flex items-center gap-4">
           <div className="bg-green-100 p-3 rounded-full text-green-700">
-            <CheckCircle2 className="w-8 h-8" />
+            <Lock className="w-8 h-8" />
           </div>
           <div>
             <h2 className="text-xl font-semibold text-green-800 flex items-center gap-2">Handoff Complete <Lock className="w-4 h-4" /></h2>
@@ -74,6 +78,24 @@ export default function HandoffForm({ studentId, assignmentId, initialData }: { 
         </div>
 
         <div className="bg-card p-6 rounded-xl border shadow-sm space-y-6 opacity-90">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 border-b pb-4">
+            <div>
+              <span className="text-xs font-semibold text-muted-foreground block">Year Label</span>
+              <span className="text-sm font-bold text-card-foreground">{initialData.year_label || 'N/A'}</span>
+            </div>
+            <div>
+              <span className="text-xs font-semibold text-muted-foreground block">Academic Year</span>
+              <span className="text-sm font-bold text-card-foreground">{initialData.academic_year || 'N/A'}</span>
+            </div>
+            <div>
+              <span className="text-xs font-semibold text-muted-foreground block">Mentor Designation</span>
+              <span className="text-sm font-bold text-card-foreground">{initialData.designation || 'N/A'}</span>
+            </div>
+            <div>
+              <span className="text-xs font-semibold text-muted-foreground block">Mentor Department</span>
+              <span className="text-sm font-bold text-card-foreground">{initialData.department || 'N/A'}</span>
+            </div>
+          </div>
           <div className="space-y-1">
             <label className="text-sm font-semibold text-muted-foreground">Overall Academic Summary</label>
             <p className="bg-muted/30 p-3 rounded-md text-sm whitespace-pre-wrap">{initialAcademic || 'N/A'}</p>
@@ -100,6 +122,25 @@ export default function HandoffForm({ studentId, assignmentId, initialData }: { 
       {error && <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">{error}</div>}
       
       <div className="space-y-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-muted/20 rounded-xl border">
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-muted-foreground">Year Label</label>
+            <input {...register('year_label')} placeholder="e.g. III B.Tech" required className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-muted-foreground">Academic Year</label>
+            <input {...register('academic_year')} placeholder="e.g. 2023-24" required className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-muted-foreground">Mentor Designation</label>
+            <input {...register('designation')} placeholder="e.g. Asst. Professor" required className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-muted-foreground">Mentor Department</label>
+            <input {...register('department')} placeholder="e.g. CSE" required className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" />
+          </div>
+        </div>
+
         <div className="space-y-2">
           <label className="text-sm font-semibold">Overall Academic Summary</label>
           <textarea 

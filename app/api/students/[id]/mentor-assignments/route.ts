@@ -86,7 +86,17 @@ export async function PATCH(
     const adminClient = createAdminClient()
 
     const body = await request.json()
-    const { id, handoff_notes, handoff_unresolved_recommendations, handoff_completed, handoff_completed_at } = body
+    const { 
+      id, 
+      handoff_notes, 
+      handoff_unresolved_recommendations, 
+      handoff_completed, 
+      handoff_completed_at,
+      year_label,
+      academic_year,
+      designation,
+      department
+    } = body
     if (!id) return NextResponse.json({ error: 'Missing record id' }, { status: 400 })
 
     // Verify the assignment belongs to this mentor
@@ -111,7 +121,11 @@ export async function PATCH(
         handoff_notes,
         handoff_unresolved_recommendations,
         handoff_completed,
-        handoff_completed_at
+        handoff_completed_at,
+        year_label,
+        academic_year,
+        designation,
+        department
       })
       .eq('id', id)
       .select()

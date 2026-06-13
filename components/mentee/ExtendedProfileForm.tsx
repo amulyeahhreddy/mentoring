@@ -13,11 +13,18 @@ const profileSchema = z.object({
   admission_category: z.string().optional(),
   id_mark_1: z.string().optional(),
   id_mark_2: z.string().optional(),
+  blood_group: z.string().optional(),
+  mobile_number: z.string().optional(),
+  personal_email: z.string().email('Invalid email').optional().or(z.literal('')),
+  father_name: z.string().optional(),
   father_occupation: z.string().optional(),
   father_education: z.string().optional(),
   father_address: z.string().optional(),
+  father_contact_no: z.string().optional(),
+  mother_name: z.string().optional(),
   mother_occupation: z.string().optional(),
   mother_education: z.string().optional(),
+  mother_contact_no: z.string().optional(),
   local_guardian_name: z.string().optional(),
   local_guardian_occupation: z.string().optional(),
   local_guardian_address: z.string().optional(),
@@ -120,6 +127,19 @@ export default function ExtendedProfileForm({ studentId, initialData, isReadOnly
                   <input {...register('id_mark_2')} disabled={isReadOnly} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" />
                 </div>
                 <div className="space-y-1">
+                  <label className="text-sm font-medium">Blood Group</label>
+                  <input {...register('blood_group')} disabled={isReadOnly} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" placeholder="O+" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium">Mobile Number</label>
+                  <input {...register('mobile_number')} disabled={isReadOnly} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium">Personal Email</label>
+                  <input type="email" {...register('personal_email')} disabled={isReadOnly} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" />
+                  {errors.personal_email && <span className="text-xs text-destructive">{errors.personal_email.message?.toString()}</span>}
+                </div>
+                <div className="space-y-1">
                   <label className="text-sm font-medium">Parent Email</label>
                   <input type="email" {...register('parent_email')} disabled={isReadOnly} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" />
                   {errors.parent_email && <span className="text-xs text-destructive">{errors.parent_email.message?.toString()}</span>}
@@ -136,6 +156,14 @@ export default function ExtendedProfileForm({ studentId, initialData, isReadOnly
               <h4 className="font-semibold border-b pb-2">Parent Details</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1">
+                  <label className="text-sm font-medium">Father's Name</label>
+                  <input {...register('father_name')} disabled={isReadOnly} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium">Father's Contact Number</label>
+                  <input {...register('father_contact_no')} disabled={isReadOnly} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" />
+                </div>
+                <div className="space-y-1">
                   <label className="text-sm font-medium">Father Occupation</label>
                   <input {...register('father_occupation')} disabled={isReadOnly} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" />
                 </div>
@@ -146,6 +174,14 @@ export default function ExtendedProfileForm({ studentId, initialData, isReadOnly
                 <div className="space-y-1 md:col-span-2">
                   <label className="text-sm font-medium">Father Address</label>
                   <input {...register('father_address')} disabled={isReadOnly} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium">Mother's Name</label>
+                  <input {...register('mother_name')} disabled={isReadOnly} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium">Mother's Contact Number</label>
+                  <input {...register('mother_contact_no')} disabled={isReadOnly} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" />
                 </div>
                 <div className="space-y-1">
                   <label className="text-sm font-medium">Mother Occupation</label>

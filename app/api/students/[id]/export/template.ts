@@ -31,6 +31,31 @@ export function generateDiaryHTML(data: any): string {
     return selected === value ? '●' : '○'
   }
 
+  const buildCgpaChartSvg = (semesterResults: unknown[]): string => {
+    const sems = semesterResults as Array<{semester: number; year: number; cgpa?: number; sgpa?: number}>;
+    if (!sems.length) return '<p style="color:#999;font-size:9pt">No semester data available</p>';
+    const width = 500, height = 200, padL = 40, padB = 30, padT = 20, padR = 20;
+    const maxCgpa = 10;
+    const points = sems.map((s, i) => ({
+      x: padL + (i / (sems.length - 1 || 1)) * (width - padL - padR),
+      y: padT + (1 - (s.cgpa ?? 0) / maxCgpa) * (height - padT - padB),
+      cgpa: s.cgpa ?? 0,
+      label: `Y${s.year}S${s.semester}`,
+    }));
+    const polyline = points.map(p => `${p.x},${p.y}`).join(' ');
+    const labels = points.map(p =>
+      `<text x="${p.x}" y="${height - 5}" text-anchor="middle" font-size="8">${p.label}</text>
+       <text x="${p.x}" y="${p.y - 5}" text-anchor="middle" font-size="8">${p.cgpa.toFixed(2)}</text>`
+    ).join('');
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
+    <rect width="${width}" height="${height}" fill="white" stroke="#ddd"/>
+    <polyline points="${polyline}" fill="none" stroke="#2563eb" stroke-width="2"/>
+    ${points.map(p => `<circle cx="${p.x}" cy="${p.y}" r="3" fill="#2563eb"/>`).join('')}
+    ${labels}
+    <text x="10" y="${height/2}" transform="rotate(-90,10,${height/2})" font-size="9" text-anchor="middle">CGPA</text>
+  </svg>`;
+  }
+
   let html = `<!DOCTYPE html>
 <html>
 <head>
@@ -488,6 +513,11 @@ export function generateDiaryHTML(data: any): string {
   
   <div style="margin-top: 12px; font-weight: bold; font-family: Arial, sans-serif; color: #1a3a6b;">
     Final CGPA: ${semesterResults[semesterResults.length-1]?.cgpa || '___'}
+  </div>
+  
+  <div style="margin-top: 16px;">
+    <div style="font-weight: bold; font-family: Arial, sans-serif; color: #1a3a6b; margin-bottom: 8px;">CGPA Trend Chart</div>
+    ${buildCgpaChartSvg(semesterResults)}
   </div>
 </div>`
 
@@ -963,8 +993,118 @@ export function generateDiaryHTML(data: any): string {
   </ol>
 </div>`
 
+  // PAGE 11 - PROGRAMME OUTCOMES (PO1-PO11)
+  html += `
+<div class="page">
+  <div class="page-number">11</div>
+  <div class="section-header">PROGRAMME OUTCOMES (PO1-PO11)</div>
+  <div style="margin: 12px 0; font-size: 9pt; color: #666; font-style: italic;">
+    Washington Accord Framework - Engineering Graduates Attributes
+  </div>
+  
+  <table>
+    <thead>
+      <tr>
+        <th>PO Code</th>
+        <th>Programme Outcome</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>PO1</strong></td>
+        <td>Engineering knowledge: Apply the knowledge of mathematics, science, engineering fundamentals, and an engineering specialization to the solution of complex engineering problems.</td>
+      </tr>
+      <tr>
+        <td><strong>PO2</strong></td>
+        <td>Problem analysis: Identify, formulate, review research literature, and analyze complex engineering problems reaching substantiated conclusions using first principles of mathematics, natural sciences, and engineering sciences.</td>
+      </tr>
+      <tr>
+        <td><strong>PO3</strong></td>
+        <td>Design/development of solutions: Design solutions for complex engineering problems and design system components or processes that meet the specified needs with appropriate consideration for the public health and safety, and the cultural, societal, and environmental considerations.</td>
+      </tr>
+      <tr>
+        <td><strong>PO4</strong></td>
+        <td>Conduct investigations of complex problems: Use research-based knowledge and research methods including design of experiments, analysis and interpretation of data, and synthesis of the information to provide valid conclusions.</td>
+      </tr>
+      <tr>
+        <td><strong>PO5</strong></td>
+        <td>Modern tool usage: Create, select, and apply appropriate techniques, resources, and modern engineering and IT tools including prediction and modeling to complex engineering activities with an understanding of the limitations.</td>
+      </tr>
+      <tr>
+        <td><strong>PO6</strong></td>
+        <td>The engineer and society: Apply reasoning informed by the contextual knowledge to assess societal, health, safety, legal and cultural issues and the consequent responsibilities relevant to the professional engineering practice.</td>
+      </tr>
+      <tr>
+        <td><strong>PO7</strong></td>
+        <td>Environment and sustainability: Understand the impact of the professional engineering solutions in societal and environmental contexts, and demonstrate the knowledge of, and need for, sustainable development.</td>
+      </tr>
+      <tr>
+        <td><strong>PO8</strong></td>
+        <td>Ethics: Apply ethical principles and commit to professional ethics and responsibilities and norms of the engineering practice.</td>
+      </tr>
+      <tr>
+        <td><strong>PO9</strong></td>
+        <td>Individual and team work: Function effectively as an individual, and as a member or leader in diverse teams, and in multidisciplinary settings.</td>
+      </tr>
+      <tr>
+        <td><strong>PO10</strong></td>
+        <td>Communication: Communicate effectively on complex engineering activities with the engineering community and with society at large, such as, being able to comprehend and write effective reports and design documentation, make effective presentations, and give and receive clear instructions.</td>
+      </tr>
+      <tr>
+        <td><strong>PO11</strong></td>
+        <td>Project management and finance: Demonstrate knowledge and understanding of the engineering and management principles and apply these to one's own work, as a member and leader in a team, to manage projects and in multidisciplinary environments.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>`
+
+  // PAGE 12 - GRADUATE ATTRIBUTES (A1-A6)
+  html += `
+<div class="page">
+  <div class="page-number">12</div>
+  <div class="section-header">GRADUATE ATTRIBUTES (A1-A6)</div>
+  <div style="margin: 12px 0; font-size: 9pt; color: #666; font-style: italic;">
+    NBA Graduate Attributes - Engineering Graduates
+  </div>
+  
+  <table>
+    <thead>
+      <tr>
+        <th>GA Code</th>
+        <th>Graduate Attribute</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>GA1</strong></td>
+        <td>Engineering Knowledge: Apply the knowledge of mathematics, science, engineering fundamentals, and an engineering specialization to the solution of complex engineering problems.</td>
+      </tr>
+      <tr>
+        <td><strong>GA2</strong></td>
+        <td>Problem Analysis: Identify, formulate, research literature, and analyze complex engineering problems reaching substantiated conclusions using first principles of mathematics, natural sciences, and engineering sciences.</td>
+      </tr>
+      <tr>
+        <td><strong>GA3</strong></td>
+        <td>Design/Development of Solutions: Design solutions for complex engineering problems and design system components or processes that meet specified needs with appropriate consideration for public health, safety, cultural, societal, and environmental considerations.</td>
+      </tr>
+      <tr>
+        <td><strong>GA4</strong></td>
+        <td>Conduct Investigations of Complex Problems: Use research-based knowledge and research methods including design of experiments, analysis and interpretation of data to provide valid conclusions.</td>
+      </tr>
+      <tr>
+        <td><strong>GA5</strong></td>
+        <td>Modern Tool Usage: Create, select, and apply appropriate techniques, resources, and modern engineering tools including prediction and modeling to complex engineering activities with understanding of limitations.</td>
+      </tr>
+      <tr>
+        <td><strong>GA6</strong></td>
+        <td>The Engineer and Society: Apply reasoning informed by contextual knowledge to assess societal, health, safety, legal, and cultural issues and consequent responsibilities relevant to professional engineering practice.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>`
+
   // SESSION RECORDS
-  let sessionPageNum = 11
+  let sessionPageNum = 13
   if (!sessions || sessions.length === 0) {
     html += `
 <div class="page">
@@ -1381,13 +1521,132 @@ export function generateDiaryHTML(data: any): string {
 </div>`
   }
 
+  // CAREER COUNSELLING SUMMARY
+  const allCareerCounselling = sessions.flatMap((s: any) => s.careerCounselling ? [s.careerCounselling] : [])
+  const latestCareer = allCareerCounselling.length > 0 ? allCareerCounselling[allCareerCounselling.length - 1] : null
+
+  if (latestCareer) {
+    html += `
+<div class="page">
+  <div class="page-number">${sessionPageNum++}</div>
+  <div class="section-header">CAREER COUNSELLING SUMMARY</div>
+  
+  <div style="margin: 12px 0;">
+    <div style="font-weight: bold; color: #1a3a6b; margin-bottom: 8px; font-family: Arial, sans-serif;">Career Pathway Status</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Pathway</th>
+          <th>Status</th>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Higher Studies (USA)</td>
+          <td>${latestCareer.usa_interested ? '☑ Interested' : '☐ Not Interested'}</td>
+          <td>${latestCareer.usa_gre_taken ? 'GRE: Yes' : 'GRE: No'} | ${latestCareer.usa_toefl_taken ? 'TOEFL/IELTS: Yes' : 'TOEFL/IELTS: No'} | ${latestCareer.usa_research ? 'Research: Yes' : 'Research: No'}</td>
+        </tr>
+        <tr>
+          <td>Higher Studies (Other Countries)</td>
+          <td>${latestCareer.other_interested ? '☑ Interested' : '☐ Not Interested'}</td>
+          <td>${latestCareer.other_countries_list || ''}</td>
+        </tr>
+        <tr>
+          <td>Higher Studies (GATE)</td>
+          <td>${latestCareer.gate_interested ? '☑ Interested' : '☐ Not Interested'}</td>
+          <td>${latestCareer.gre_india_interested ? 'GRE India: Yes' : 'GRE India: No'}</td>
+        </tr>
+        <tr>
+          <td>M.Tech in India</td>
+          <td>${latestCareer.mtech_interested ? '☑ Interested' : '☐ Not Interested'}</td>
+          <td>${latestCareer.mtech_specialization_field || ''}</td>
+        </tr>
+        <tr>
+          <td>MBA in India</td>
+          <td>${latestCareer.mba_interested ? '☑ Interested' : '☐ Not Interested'}</td>
+          <td>${latestCareer.cat_taken ? 'CAT: Yes' : 'CAT: No'}</td>
+        </tr>
+        <tr>
+          <td>Campus Placement</td>
+          <td>${latestCareer.job_interested ? '☑ Interested' : '☐ Not Interested'}</td>
+          <td>${latestCareer.job_off_campus ? 'Off-campus: Yes' : 'Off-campus: No'} | ${latestCareer.job_startup ? 'Startups: Yes' : 'Startups: No'}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  
+  <div class="navy-divider"></div>
+  
+  <div style="font-weight: bold; color: #1a3a6b; margin: 8px 0; font-family: Arial, sans-serif;">Mentor Summary</div>
+  <div class="lined-textarea">${latestCareer.mentor_summary || ''}</div>
+</div>`
+  }
+
+  // PSYCHOMETRIC TEST SUMMARY
+  const allPsychometricTests = sessions.flatMap((s: any) => s.psychometricTest ? [s.psychometricTest] : [])
+  if (allPsychometricTests.length > 0) {
+    html += `
+<div class="page">
+  <div class="page-number">${sessionPageNum++}</div>
+  <div class="section-header">PSYCHOMETRIC TEST SUMMARY</div>`
+    
+    allPsychometricTests.forEach((pt: any, idx: number) => {
+      const testNumber = pt.test_number || idx + 1
+      html += `
+  <div style="margin: 16px 0;">
+    <div style="font-weight: bold; color: #1a3a6b; margin-bottom: 8px; font-family: Arial, sans-serif;">Test #${testNumber} — ${pt.administered_at ? formatDate(pt.administered_at) : 'Date not recorded'}</div>`
+      
+      if (testNumber === 1 && pt.ld_engineering_knowledge !== undefined) {
+        // Test 1: Render ld_* columns as table
+        html += `
+    <table>
+      <thead>
+        <tr>
+          <th>Learning Domain</th>
+          <th>Level</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Engineering Knowledge</td><td>${pt.ld_engineering_knowledge || ''}</td></tr>
+        <tr><td>Problem Analysis</td><td>${pt.ld_problem_analysis || ''}</td></tr>
+        <tr><td>Design/Development</td><td>${pt.ld_design_development || ''}</td></tr>
+        <tr><td>Complex Investigations</td><td>${pt.ld_complex_investigations || ''}</td></tr>
+        <tr><td>Tool Usage</td><td>${pt.ld_tool_usage || ''}</td></tr>
+        <tr><td>Engineer & World</td><td>${pt.ld_engineer_and_world || ''}</td></tr>
+        <tr><td>Ethics</td><td>${pt.ld_ethics || ''}</td></tr>
+        <tr><td>Teamwork</td><td>${pt.ld_teamwork || ''}</td></tr>
+        <tr><td>Communication</td><td>${pt.ld_communication || ''}</td></tr>
+        <tr><td>Project Management</td><td>${pt.ld_project_management || ''}</td></tr>
+        <tr><td>Lifelong Learning</td><td>${pt.ld_lifelong_learning || ''}</td></tr>
+      </tbody>
+    </table>`
+      } else if (pt.ps_item_responses) {
+        // Tests 2 & 3: Render item responses from JSONB
+        const responses = typeof pt.ps_item_responses === 'string' ? JSON.parse(pt.ps_item_responses) : pt.ps_item_responses
+        html += `
+    <div style="margin: 8px 0;">
+      <div style="font-weight: bold; color: #1a3a6b; margin-bottom: 4px; font-family: Arial, sans-serif;">Item Responses:</div>
+      <ol style="margin: 8px 0; padding-left: 20px;">
+        ${Object.entries(responses).map(([key, value]: [string, any]) => `<li><strong>${key}:</strong> ${value}</li>`).join('')}
+      </ol>
+    </div>`
+      }
+      
+      html += `
+  </div>`
+    })
+    
+    html += `
+</div>`
+  }
+
   // AI SUMMARY DASHBOARD
   const latestCGPA = semesterResults[semesterResults.length - 1]?.cgpa || 'N/A'
   const latestAttendance = sessions.length > 0 ? sessions[sessions.length - 1].attendance_percentage : 'N/A'
   const activeBacklogs = backlogRecords?.filter((br: any) => br.attempt4_result === 'Fail').length || 0
   const completedTasks = tasks.filter((t: any) => t.status === 'completed').length
   const pendingTasks = tasks.filter((t: any) => t.status !== 'completed').length
-  const latestCareer = sessions.length > 0 ? sessions[sessions.length - 1].careerCounselling : null
 
   html += `
 <div class="page">

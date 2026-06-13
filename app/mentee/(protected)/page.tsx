@@ -246,7 +246,8 @@ export default function MenteeDashboard() {
     const maxAtt = 100
     const points = attendanceData.map((r, i) => {
       const x = padding + (i * (width - 2 * padding) / (attendanceData.length > 1 ? attendanceData.length - 1 : 1))
-      const y = height - padding - (r.percentage * (height - 2 * padding) / maxAtt)
+      const percentage = typeof r.percentage === 'number' ? r.percentage : 0
+      const y = height - padding - (percentage * (height - 2 * padding) / maxAtt)
       return { x, y, label: `F${r.fortnight_number}` }
     })
 

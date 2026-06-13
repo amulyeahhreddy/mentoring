@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { fetchDiaryExportData } from './data'
 import { generateDiaryHTML } from './template'
-import puppeteer from 'puppeteer'
+import { renderHtmlToPdf } from '@/lib/pdf-renderer'
 
 export async function GET(
   request: NextRequest,
@@ -29,26 +29,11 @@ export async function GET(
     console.log(`[PDF Export] Student: ${data.profile?.name || id}, Sessions: ${data.sessions?.length ?? 0}, Questionnaire: ${data.initialQuestionnaire ? 'present' : 'null'}`)
     const html = generateDiaryHTML(data)
 
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-    })
-
-    const page = await browser.newPage()
-    await page.setContent(html, { waitUntil: 'domcontentloaded' })
-
-    const pdf = await page.pdf({
-      format: 'A4',
-      printBackground: true,
-      margin: { top: '0mm', right: '0mm', bottom: '0mm', left: '0mm' },
-      displayHeaderFooter: false,
-    })
-
-    await browser.close()
+    const pdfBuffer = await renderHtmlToPdf(html)
 
     const studentName = (data.profile?.name || 'student').replace(/\s+/g, '_')
 
-    return new NextResponse(Buffer.from(pdf), {
+    return new NextResponse(pdfBuffer as any, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="Mentoring_Diary_${studentName}.pdf"`,

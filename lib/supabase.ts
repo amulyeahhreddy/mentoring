@@ -1,3 +1,4 @@
+// DEPRECATED: import from @/lib/supabase/client.ts instead
 // Re-export from the singleton client to prevent duplicates
 export { getSupabaseClient } from './supabaseClient'
 

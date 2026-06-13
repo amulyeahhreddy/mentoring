@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export async function POST(request: NextRequest) {
+  const supabase = await createClient()
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (!user || authError) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const supabaseAdmin = createAdminClient()
+
   try {
     const { 
       student_id, 
@@ -24,21 +28,20 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Count existing sessions for this student+mentor pair to set session_number
-    const { data: existingSessions, error: countError } = await supabaseAdmin
-      .from('sessions')
-      .select('id')
-      .eq('student_id', student_id)
-      .eq('mentor_id', mentor_id);
+    // Get next session number using atomic Postgres function
+    const { data: nextNum, error: rpcError } = await supabaseAdmin.rpc('assign_session_number', {
+      p_student_id: student_id,
+      p_mentor_id: mentor_id,
+    });
 
-    if (countError) {
-      console.error('Count error:', countError);
-      return NextResponse.json({ 
-        error: 'Failed to count existing sessions' 
+    if (rpcError || !nextNum) {
+      console.error('RPC error:', rpcError);
+      return NextResponse.json({
+        error: 'Failed to assign session number'
       }, { status: 500 });
     }
 
-    const sessionNumber = (existingSessions?.length || 0) + 1;
+    const sessionNumber = nextNum as number;
 
     // Create new session
     const { data: newSession, error: insertError } = await supabaseAdmin

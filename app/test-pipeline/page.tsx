@@ -114,10 +114,7 @@ export default function TestPipeline() {
         
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
           <p className="text-sm text-yellow-800">
-            <strong>Note:</strong> Make sure Ollama is running: 
-            <code className="ml-2 bg-yellow-100 px-2 py-1 rounded text-xs">
-              ollama serve
-            </code>
+            <strong>Note:</strong> Make sure GROQ_API_KEY is set in .env.local
           </p>
         </div>
 

@@ -1,3 +1,4 @@
+// DEPRECATED: import from @/lib/supabase/client.ts instead
 import { createBrowserClient } from '@supabase/ssr'
 
 let supabaseClient: ReturnType<typeof createBrowserClient> | null = null

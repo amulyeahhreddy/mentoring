@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { buildBriefingPhase1Context } from '@/lib/briefing-prompt-context';
+import { createClient } from '@/lib/supabase/server';
+import { callLLM } from '@/lib/llm';
 
 export const maxDuration = 120;
 
 export async function POST(request: NextRequest) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 120000);
+  const supabase = await createClient()
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (!user || authError) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
   try {
     const body = await request.json();
@@ -124,31 +129,9 @@ If no concerning data exists, return empty red_flags and 2 light check-in questi
     }
     const fullPrompt = promptParts.join('');
 
-    const ollamaResponse = await fetch('http://localhost:11434/api/generate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'qwen2.5:3b',
-        prompt: fullPrompt,
-        stream: false
-      }),
-      signal: controller.signal
-    }).catch(err => {
-      if (err.name === 'AbortError') throw new Error('Ollama request timed out (120s)');
-      throw new Error('Failed to connect to Ollama. Ensure it is running on port 11434.');
-    });
+    const raw = await callLLM(fullPrompt, systemPrompt);
+    let cleanedResponse = raw.trim() || '';
 
-    clearTimeout(timeoutId);
-
-    if (!ollamaResponse.ok) {
-      return NextResponse.json({ error: 'Ollama server returned an error: ' + ollamaResponse.statusText }, { status: 500 });
-    }
-
-    const ollamaResult = await ollamaResponse.json();
-    let cleanedResponse = ollamaResult.response?.trim() || '';
-    
     if (!cleanedResponse) {
       return NextResponse.json({ error: 'Empty response from AI model' }, { status: 500 });
     }
@@ -170,7 +153,6 @@ If no concerning data exists, return empty red_flags and 2 light check-in questi
     }
 
   } catch (error: any) {
-    clearTimeout(timeoutId);
     console.error('Pre-session questions error:', error);
     return NextResponse.json({ error: error.message || 'Failed to generate questions' }, { status: 500 });
   }

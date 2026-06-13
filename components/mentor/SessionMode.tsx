@@ -64,6 +64,7 @@ export default function SessionMode({
   const [topicsAddressed, setTopicsAddressed] = useState<Record<string, boolean>>({})
   const [indisciplinaryActivity, setIndisciplinaryActivity] = useState(false)
   const [indisciplinaryDetails, setIndisciplinaryDetails] = useState('')
+  const [attendanceAbove90, setAttendanceAbove90] = useState<boolean | null>(null)
 
 
   const supabase = createClient()
@@ -76,6 +77,7 @@ export default function SessionMode({
         topics_addressed: topicsAddressed,
         indisciplinary_activity: indisciplinaryActivity,
         indisciplinary_details: indisciplinaryDetails,
+        attendance_above_90: attendanceAbove90,
       })
       .eq('id', activeSessionId)
   }
@@ -97,6 +99,7 @@ export default function SessionMode({
         setTopicsAddressed((data.topics_addressed as Record<string, boolean>) || {})
         setIndisciplinaryActivity(!!data.indisciplinary_activity)
         setIndisciplinaryDetails(data.indisciplinary_details || '')
+        setAttendanceAbove90(data.attendance_above_90 ?? null)
 
         // Fetch course ratings and facility feedback from normalized tables (Phase 2)
         let course_ratings: any[] = [{}]
@@ -269,6 +272,7 @@ export default function SessionMode({
           topics_addressed: topicsAddressed,
           indisciplinary_activity: indisciplinaryActivity,
           indisciplinary_details: indisciplinaryDetails,
+          attendance_above_90: attendanceAbove90,
         })
         .eq('id', activeSessionId)
 
@@ -375,6 +379,43 @@ export default function SessionMode({
           </div>
 
           <div className="p-10 space-y-12 flex-1">
+            {/* ATTENDANCE ABOVE 90% TOGGLE */}
+            <div className="bg-[#fcfcfd] border border-[#e4e4e9] rounded-2xl p-6 flex items-center justify-between shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-[#f0fdf4] flex items-center justify-center text-[#15803d]">
+                  <i className="ti ti-calendar-check text-lg"></i>
+                </div>
+                <div>
+                  <h4 className="text-[13px] font-black text-[#111116] uppercase tracking-widest">Attendance Status</h4>
+                  <p className="text-[11px] text-[#9090a0] font-bold uppercase tracking-wider">Is overall attendance above 90% in all classes?</p>
+                </div>
+              </div>
+              <div className="flex bg-[#f4f4f6] rounded-md p-1">
+                <button 
+                  type="button"
+                  disabled={viewMode}
+                  className={`px-4 py-1.5 text-[11px] font-black rounded-lg transition-all ${attendanceAbove90 === true ? 'bg-white shadow text-[#15803d]' : 'text-[#9090a0]'}`}
+                  onClick={async () => {
+                    setAttendanceAbove90(true)
+                    if (!viewMode && activeSessionId) {
+                      await supabase.from('sessions').update({ attendance_above_90: true }).eq('id', activeSessionId)
+                    }
+                  }}
+                >YES</button>
+                <button 
+                  type="button"
+                  disabled={viewMode}
+                  className={`px-4 py-1.5 text-[11px] font-black rounded-lg transition-all ${attendanceAbove90 === false ? 'bg-white shadow text-[#dc2626]' : 'text-[#9090a0]'}`}
+                  onClick={async () => {
+                    setAttendanceAbove90(false)
+                    if (!viewMode && activeSessionId) {
+                      await supabase.from('sessions').update({ attendance_above_90: false }).eq('id', activeSessionId)
+                    }
+                  }}
+                >NO</button>
+              </div>
+            </div>
+
             {phase === 'student' ? (
               <>
                 {/* 1. COURSE RATINGS */}

@@ -18,6 +18,20 @@ const DIMENSIONS = [
   "Lifelong Learning"
 ]
 
+const DIMENSION_COLUMN_MAP: Record<string, string> = {
+  "Engineering Knowledge": "ld_engineering_knowledge",
+  "Problem Analysis": "ld_problem_analysis",
+  "Design/Development": "ld_design_development",
+  "Complex Investigations": "ld_complex_investigations",
+  "Tool Usage": "ld_tool_usage",
+  "Engineer & World": "ld_engineer_and_world",
+  "Ethics": "ld_ethics",
+  "Teamwork": "ld_teamwork",
+  "Communication": "ld_communication",
+  "Project Management": "ld_project_management",
+  "Lifelong Learning": "ld_lifelong_learning"
+}
+
 export default function PsychometricTest1({ studentId, initialData, userRole }: { studentId: string, initialData: any, userRole: string }) {
   const isMentor = userRole === 'mentor'
   const isReadOnly = !isMentor
@@ -39,13 +53,17 @@ export default function PsychometricTest1({ studentId, initialData, userRole }: 
     const formData = new FormData(e.currentTarget)
     const mentor_comments = formData.get('mentor_comments') as string
     
-    // We could store the 11 rows in ps_item_responses or specific columns.
-    // The prompt says "11-row table... radio buttons. Stored as... wait, prompt didn't specify exact JSON schema for test 1, 
-    // let's use ps_item_responses to hold the 11 dimensions.
     const responses: Record<string, string> = {}
+    const flatFields: Record<string, string> = {}
     DIMENSIONS.forEach(dim => {
       const val = formData.get(dim)
-      if (val) responses[dim] = val as string
+      if (val) {
+        responses[dim] = val as string
+        const col = DIMENSION_COLUMN_MAP[dim]
+        if (col) {
+          flatFields[col] = val as string
+        }
+      }
     })
 
     try {
@@ -55,7 +73,8 @@ export default function PsychometricTest1({ studentId, initialData, userRole }: 
         body: JSON.stringify({
           test_number: 1,
           ps_item_responses: responses,
-          mentor_comments
+          mentor_comments,
+          ...flatFields
         })
       })
       if (!res.ok) throw new Error(await res.text())

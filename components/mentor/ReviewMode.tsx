@@ -36,25 +36,34 @@ export default function ReviewMode({
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true)
-      const [
-        { data: sessionData },
-        { data: profileRes },
-        { data: courseRatingsRes },
-        { data: facilityFeedbackRes }
-      ] = await Promise.all([
-        supabase.from('sessions').select('*').eq('id', activeSessionId).single(),
-        supabase.from('student_profiles').select('*').eq('student_id', selectedStudent.id).maybeSingle(),
-        fetch(`/api/session/course-ratings?session_id=${activeSessionId}`).then(r => r.json()).then(res => res.data || []),
-        fetch(`/api/session/facility-feedback?session_id=${activeSessionId}`).then(r => r.json()).then(res => res.data)
-      ])
+      try {
+        const results = await Promise.all([
+          supabase.from('sessions').select('*').eq('id', activeSessionId).single(),
+          supabase.from('profiles').select('*').eq('id', selectedStudent.id).maybeSingle(),
+          fetch(`/api/session/course-ratings?session_id=${activeSessionId}`).then(r => r.json()).catch(() => ({ data: [] })),
+          fetch(`/api/session/facility-feedback?session_id=${activeSessionId}`).then(r => r.json()).catch(() => ({ data: null }))
+        ])
 
-      if (sessionData) {
-        setSession(sessionData)
-        setEditedOutput(sessionData.ai_output)
+        const sessionResult = results[0] || {}
+        const profileResult = results[1] || {}
+        const courseRatingsResult = results[2] || {}
+        const facilityFeedbackResult = results[3] || {}
+
+        const sessionData = sessionResult?.data
+        const profileRes = profileResult?.data
+        const courseRatingsRes = courseRatingsResult?.data || []
+        const facilityFeedbackRes = facilityFeedbackResult?.data
+
+        if (sessionData) {
+          setSession(sessionData)
+          setEditedOutput(sessionData.ai_output)
+        }
+        setProfileData(profileRes)
+        setCourseRatings(courseRatingsRes || [])
+        setFacilityFeedback(facilityFeedbackRes)
+      } catch (error) {
+        console.error('Error fetching review data:', error)
       }
-      setProfileData(profileRes)
-      setCourseRatings(courseRatingsRes || [])
-      setFacilityFeedback(facilityFeedbackRes)
       setLoading(false)
     }
 
@@ -75,7 +84,6 @@ export default function ReviewMode({
         .from('sessions')
         .update({
           ai_output: editedOutput,
-          status: 'completed',
           session_status: 'mentor_review',
           mentor_signed_off: true,
           mentor_signed_off_at: new Date().toISOString()
@@ -84,9 +92,9 @@ export default function ReviewMode({
 
       if (updateError) throw updateError
 
-      // 2. Upsert action items as tests
-      if (editedOutput?.tasks_assigned?.length > 0) {
-        const tasks = editedOutput.tasks_assigned.map((t: any) => ({
+      // 2. Upsert action items as tasks
+      if (editedOutput?.tasks?.length > 0) {
+        const tasks = editedOutput.tasks.map((t: any) => ({
           session_id: activeSessionId,
           student_id: selectedStudent.id,
           mentor_id: mentorId,
@@ -97,12 +105,12 @@ export default function ReviewMode({
         }))
 
         await supabase
-          .from('tests')
+          .from('tasks')
           .delete()
           .eq('session_id', activeSessionId)
 
         const { error: tasksError } = await supabase
-          .from('tests')
+          .from('tasks')
           .insert(tasks)
         
         if (tasksError) console.error('Tasks upsert error:', tasksError)
@@ -119,7 +127,7 @@ export default function ReviewMode({
           insights: {
             questions: [...carryForward, ...suggestedNext]
           },
-          model_used: 'ollama',
+          model_used: 'groq',
           generated_at: new Date().toISOString()
         })
       }
@@ -506,7 +514,7 @@ export default function ReviewMode({
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-[#f4f4f6]">
-                        {editedOutput.tasks_assigned?.map((t: any, i: number) => (
+                        {editedOutput.tasks?.map((t: any, i: number) => (
                           <tr key={i} className="hover:bg-[#fcfcfd] transition-colors">
                             <td className="px-6 py-4">
                               <input 
@@ -514,9 +522,9 @@ export default function ReviewMode({
                                 className="w-full bg-transparent font-bold text-[#111116] focus:text-[#4f6ef7] outline-none"
                                 value={t.task}
                                 onChange={(e) => {
-                                  const tasks = [...editedOutput.tasks_assigned]
+                                  const tasks = [...editedOutput.tasks]
                                   tasks[i] = { ...tasks[i], task: e.target.value }
-                                  setEditedOutput({ ...editedOutput, tasks_assigned: tasks })
+                                  setEditedOutput({ ...editedOutput, tasks: tasks })
                                 }}
                               />
                             </td>
@@ -525,9 +533,9 @@ export default function ReviewMode({
                                 className="bg-transparent font-black text-[#4f6ef7] uppercase text-[10px] tracking-widest outline-none cursor-pointer"
                                 value={t.assigned_to}
                                 onChange={(e) => {
-                                  const tasks = [...editedOutput.tasks_assigned]
+                                  const tasks = [...editedOutput.tasks]
                                   tasks[i] = { ...tasks[i], assigned_to: e.target.value }
-                                  setEditedOutput({ ...editedOutput, tasks_assigned: tasks })
+                                  setEditedOutput({ ...editedOutput, tasks: tasks })
                                 }}
                               >
                                 <option value="student">STUDENT</option>
@@ -541,9 +549,9 @@ export default function ReviewMode({
                                 className="w-full bg-transparent font-medium text-[#9090a0] focus:text-[#111116] outline-none"
                                 value={t.due_by}
                                 onChange={(e) => {
-                                  const tasks = [...editedOutput.tasks_assigned]
+                                  const tasks = [...editedOutput.tasks]
                                   tasks[i] = { ...tasks[i], due_by: e.target.value }
-                                  setEditedOutput({ ...editedOutput, tasks_assigned: tasks })
+                                  setEditedOutput({ ...editedOutput, tasks: tasks })
                                 }}
                                 placeholder="TBD"
                               />
@@ -551,8 +559,8 @@ export default function ReviewMode({
                             <td className="px-4 py-4 w-10">
                               <button
                                 onClick={() => {
-                                  const tasks = editedOutput.tasks_assigned.filter((_: any, idx: number) => idx !== i)
-                                  setEditedOutput({ ...editedOutput, tasks_assigned: tasks })
+                                  const tasks = editedOutput.tasks.filter((_: any, idx: number) => idx !== i)
+                                  setEditedOutput({ ...editedOutput, tasks: tasks })
                                 }}
                                 className="text-[#9090a0] hover:text-[#dc2626] transition-colors p-1 rounded"
                               >
@@ -566,8 +574,8 @@ export default function ReviewMode({
                   </div>
                   <button
                     onClick={() => {
-                      const tasks = [...(editedOutput.tasks_assigned || []), { task: '', assigned_to: 'student', due_by: '' }]
-                      setEditedOutput({ ...editedOutput, tasks_assigned: tasks })
+                      const tasks = [...(editedOutput.tasks || []), { task: '', assigned_to: 'student', due_by: '' }]
+                      setEditedOutput({ ...editedOutput, tasks: tasks })
                     }}
                     className="mt-3 flex items-center gap-2 text-[13px] font-bold text-[#4f6ef7] hover:bg-[#eef1fe] px-4 py-2 rounded-xl transition-all"
                   >

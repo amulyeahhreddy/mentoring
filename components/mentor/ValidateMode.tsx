@@ -111,9 +111,9 @@ export default function ValidateMode({
         { data: prevSession },
         { data: psi }
       ] = await Promise.all([
-        supabase.from('student_profiles').select('*').eq('student_id', selectedStudent.id).maybeSingle(),
+        supabase.from('profiles').select('*').eq('id', selectedStudent.id).maybeSingle(),
         supabase.from('btech_sem_records').select('*').eq('student_id', selectedStudent.id).order('year', { ascending: true }).order('semester', { ascending: true }),
-        supabase.from('tests').select('*').eq('student_id', selectedStudent.id).eq('status', 'pending'),
+        supabase.from('tasks').select('*').eq('student_id', selectedStudent.id).eq('status', 'pending'),
         supabase.from('sessions').select('*').eq('student_id', selectedStudent.id).neq('id', activeSessionId).order('session_date', { ascending: false }).limit(1).maybeSingle(),
         supabase.from('pre_session_insights').select('*').eq('student_id', selectedStudent.id).order('generated_at', { ascending: false }).limit(1).maybeSingle()
       ])
@@ -290,16 +290,40 @@ export default function ValidateMode({
       .filter(q => !q.checked)
       .map(q => ({ text: q.text, reason: q.reason, type: q.type, checked: false }))
       
-    const outputToSave = { ...editedOutput, carry_forward_questions: carryForwardQuestions }
+    const aiOutput = {
+      observation: editedOutput.observation,
+      recommendation: editedOutput.recommendation,
+      sentiment: editedOutput.sentiment,
+      engagement: editedOutput.engagement,
+      risk_flags: editedOutput.risk_flags ?? [],
+      carry_forward_questions: carryForwardQuestions
+    }
 
     const { error } = await supabase
       .from('sessions')
-      .update({ ai_output: outputToSave })
+      .update({
+        ai_output: aiOutput,
+        topics_addressed: editedOutput.topics_addressed,
+        issues_checklist: editedOutput.issues_checklist
+      })
       .eq('id', activeSessionId)
     
     if (!error) {
-      setEditedOutput(outputToSave)
-      setAiOutput(outputToSave)
+      // Also save tasks to tasks table
+      for (const task of editedOutput.tasks ?? []) {
+        if (!task.text || task.text.trim() === '') continue
+        
+        await supabase.from('tasks').upsert({
+          session_id: activeSessionId,
+          student_id: selectedStudent.id,
+          mentor_id: mentorId,
+          text: task.text.trim(),
+          assigned_to: task.assigned_to ?? 'student',
+          due_by: task.due_by ?? 'Next session',
+          status: 'pending',
+        }, { onConflict: 'session_id,text' })
+      }
+      
       triggerToast('Draft saved')
     }
   }
@@ -315,16 +339,44 @@ export default function ValidateMode({
         .filter(q => !q.checked)
         .map(q => ({ text: q.text, reason: q.reason, type: q.type, checked: false }))
         
-      const outputToSave = { ...editedOutput, carry_forward_questions: carryForwardQuestions }
+      const aiOutput = {
+        observation: editedOutput.observation,
+        recommendation: editedOutput.recommendation,
+        sentiment: editedOutput.sentiment,
+        engagement: editedOutput.engagement,
+        risk_flags: editedOutput.risk_flags ?? [],
+        carry_forward_questions: carryForwardQuestions
+      }
 
-      // 1. PATCH sessions
+      // 1. Update sessions table with ai_output, topics_addressed, issues_checklist
       await supabase
         .from('sessions')
-        .update({ ai_output: outputToSave })
+        .update({
+          ai_output: aiOutput,
+          topics_addressed: editedOutput.topics_addressed,
+          issues_checklist: editedOutput.issues_checklist
+        })
         .eq('id', activeSessionId)
 
-      setEditedOutput(outputToSave)
-      setAiOutput(outputToSave)
+      // 2. Save tasks to tasks table
+      // First, delete existing tasks for this session
+      await supabase.from('tasks').delete().eq('session_id', activeSessionId)
+      
+      // Then insert new tasks
+      for (const task of editedOutput.tasks ?? []) {
+        if (!task.text || task.text.trim() === '') continue
+        
+        await supabase.from('tasks').insert({
+          session_id: activeSessionId,
+          student_id: selectedStudent.id,
+          mentor_id: mentorId,
+          text: task.text.trim(),
+          assigned_to: task.assigned_to ?? 'student',
+          due_by: task.due_by ?? 'Next session',
+          status: 'pending',
+        })
+      }
+
       onNext()
     } catch (err) {
       console.error('Continue error:', err)
@@ -666,170 +718,266 @@ export default function ValidateMode({
               )}
 
               {/* AI OUTPUT GRID */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 
-                {/* COLUMN 1: EMOTIONAL & PATTERNS */}
-                <div className="md:col-span-1 space-y-8">
-                  {/* EMOTIONAL STATE */}
+                {/* COLUMN 1: OBSERVATION & RECOMMENDATION */}
+                <div className="space-y-8">
+                  {/* OBSERVATION */}
                   <div className="bg-white border border-[#e4e4e9] rounded-2xl shadow-sm overflow-hidden">
                     <div className="p-5 border-b border-[#f4f4f6] bg-[#fcfcfd]">
-                      <h4 className="text-[11px] font-black text-[#111116] uppercase tracking-widest">Behavioral State</h4>
+                      <h4 className="text-[11px] font-black text-[#111116] uppercase tracking-widest">Session Observation</h4>
                     </div>
-                    <div className="p-6 space-y-6">
-                      <div className="flex flex-wrap gap-2">
-                        {[
-                          { label: editedOutput.emotional_behavioral?.overall_tone, icon: 'ti-mood-smile' },
-                          { label: editedOutput.emotional_behavioral?.engagement_level, icon: 'ti-link' },
-                          { label: editedOutput.emotional_behavioral?.confidence_level, icon: 'ti-shield-check' }
-                        ].map((pill, i) => {
-                          const l = pill.label?.toLowerCase() || '';
-                          let theme = 'bg-[#f4f4f6] text-[#52525e]';
-                          if (l.includes('high') || l.includes('positive')) theme = 'bg-[#ecfdf5] text-[#059669]';
-                          if (l.includes('medium') || l.includes('neutral')) theme = 'bg-[#fffbeb] text-[#d97706]';
-                          if (l.includes('low') || l.includes('anxious') || l.includes('distressed')) theme = 'bg-[#fef2f2] text-[#ef4444]';
-                          
-                          return (
-                            <span key={i} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black uppercase tracking-wider ${theme}`}>
-                              <i className={`ti ${pill.icon} text-[12px]`}></i>
-                              {pill.label}
-                            </span>
-                          )
+                    <div className="p-6">
+                      <textarea 
+                        className="w-full text-[13px] bg-[#fcfcfd] border border-[#e4e4e9] rounded-xl p-3 focus:border-[#4f6ef7] outline-none min-h-[120px] leading-relaxed transition-all"
+                        value={editedOutput.observation || ''}
+                        onChange={(e) => setEditedOutput({
+                          ...editedOutput,
+                          observation: e.target.value
                         })}
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-[#9090a0] uppercase tracking-widest">Observation Narrative</label>
-                        <textarea 
-                          className="w-full text-[13px] bg-[#fcfcfd] border border-[#e4e4e9] rounded-xl p-3 focus:border-[#4f6ef7] outline-none min-h-[100px] leading-relaxed transition-all"
-                          value={editedOutput.emotional_behavioral?.observations || ''}
-                          onChange={(e) => setEditedOutput({
-                            ...editedOutput,
-                            emotional_behavioral: { ...editedOutput.emotional_behavioral, observations: e.target.value }
-                          })}
-                        />
-                      </div>
+                        placeholder="2-4 sentence summary of what was discussed in this session..."
+                      />
                     </div>
                   </div>
 
-                  {/* PATTERNS */}
+                  {/* RECOMMENDATION */}
                   <div className="bg-white border border-[#e4e4e9] rounded-2xl shadow-sm overflow-hidden">
                     <div className="p-5 border-b border-[#f4f4f6] bg-[#fcfcfd]">
-                      <h4 className="text-[11px] font-black text-[#111116] uppercase tracking-widest">Recurring Patterns</h4>
+                      <h4 className="text-[11px] font-black text-[#111116] uppercase tracking-widest">Recommendation</h4>
+                    </div>
+                    <div className="p-6">
+                      <textarea 
+                        className="w-full text-[13px] bg-[#fcfcfd] border border-[#e4e4e9] rounded-xl p-3 focus:border-[#4f6ef7] outline-none min-h-[80px] leading-relaxed transition-all"
+                        value={editedOutput.recommendation || ''}
+                        onChange={(e) => setEditedOutput({
+                          ...editedOutput,
+                          recommendation: e.target.value
+                        })}
+                        placeholder="1-3 sentences of mentor's recommended next steps..."
+                      />
+                    </div>
+                  </div>
+
+                  {/* SENTIMENT & ENGAGEMENT */}
+                  <div className="bg-white border border-[#e4e4e9] rounded-2xl shadow-sm overflow-hidden">
+                    <div className="p-5 border-b border-[#f4f4f6] bg-[#fcfcfd]">
+                      <h4 className="text-[11px] font-black text-[#111116] uppercase tracking-widest">Session Metrics</h4>
                     </div>
                     <div className="p-6 space-y-4">
-                      {editedOutput.patterns?.map((p: any, i: number) => (
-                        <div key={i} className="group">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-md ${
-                              p.type === 'positive' ? 'bg-[#ecfdf5] text-[#059669]' : 'bg-[#f4f4f6] text-[#9090a0]'
-                            }`}>
-                              {p.type.toUpperCase()}
-                            </span>
-                            <span className="text-[13px] font-black text-[#111116]">{p.label}</span>
-                          </div>
-                          <p className="text-[12px] text-[#52525e] leading-relaxed font-medium">{detectClaims(p.description, ctx)}</p>
-                        </div>
-                      ))}
+                      <div className="flex flex-wrap gap-2">
+                        <span className="text-[10px] font-black text-[#9090a0] uppercase tracking-widest">Sentiment:</span>
+                        {['positive', 'neutral', 'anxious', 'disengaged', 'distressed'].map((s) => (
+                          <button
+                            key={s}
+                            onClick={() => setEditedOutput({ ...editedOutput, sentiment: s })}
+                            className={`px-3 py-1.5 rounded-full text-[11px] font-black uppercase tracking-wider transition-all ${
+                              editedOutput.sentiment === s
+                                ? 'bg-[#4f6ef7] text-white'
+                                : 'bg-[#f4f4f6] text-[#52525e] hover:bg-[#e4e4e9]'
+                            }`}
+                          >
+                            {s}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <span className="text-[10px] font-black text-[#9090a0] uppercase tracking-widest">Engagement:</span>
+                        {['high', 'medium', 'low'].map((e) => (
+                          <button
+                            key={e}
+                            onClick={() => setEditedOutput({ ...editedOutput, engagement: e })}
+                            className={`px-3 py-1.5 rounded-full text-[11px] font-black uppercase tracking-wider transition-all ${
+                              editedOutput.engagement === e
+                                ? 'bg-[#4f6ef7] text-white'
+                                : 'bg-[#f4f4f6] text-[#52525e] hover:bg-[#e4e4e9]'
+                            }`}
+                          >
+                            {e}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* COLUMN 2 & 3: DECISIONS & RISK */}
-                <div className="md:col-span-2 space-y-8">
-                  {/* SESSION DECISIONS */}
+                {/* COLUMN 2: CHECKLISTS & TASKS */}
+                <div className="space-y-8">
+                  {/* TOPICS ADDRESSED */}
                   <div className="bg-white border border-[#e4e4e9] rounded-2xl shadow-sm overflow-hidden">
-                    <div className="p-6 border-b border-[#f4f4f6] flex justify-between items-center bg-[#fcfcfd]">
-                      <h4 className="text-[11px] font-black text-[#111116] uppercase tracking-[0.2em]">Key Decisions</h4>
+                    <div className="p-5 border-b border-[#f4f4f6] bg-[#fcfcfd]">
+                      <h4 className="text-[11px] font-black text-[#111116] uppercase tracking-widest">Topics Addressed</h4>
                     </div>
-                    <div className="p-8 space-y-8">
-                      <div className="p-5 bg-[#f4f4f6]/50 border border-[#e4e4e9] rounded-2xl">
-                        <p className="text-[14px] text-[#111116] leading-relaxed font-medium italic">"{detectClaims(editedOutput.decisions?.narrative || '', ctx)}"</p>
-                      </div>
-
-                      <div className="space-y-4">
-                        <h5 className="text-[10px] font-black text-[#9090a0] uppercase tracking-widest">Action Items</h5>
-                        {editedOutput.decisions?.commitments?.map((c: any, i: number) => (
-                          <div key={i} className="flex gap-4 group items-start">
-                            <div className={`mt-1 shrink-0 w-20 text-[10px] font-black px-2 py-1 rounded-md text-center border uppercase tracking-wider ${
-                              c.assigned_to === 'student' ? 'bg-[#eef1fe] text-[#4f6ef7]' : 'bg-[#f5f3ff] text-[#7c3aed]'
-                            }`}>
-                              {c.assigned_to}
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex justify-between gap-4 items-center">
-                                <input
-                                  type="text"
-                                  className="w-full bg-transparent font-bold text-[#111116] focus:text-[#4f6ef7] outline-none text-[14px]"
-                                  value={c.task}
-                                  onChange={(e) => {
-                                    const commitments = [...(editedOutput?.decisions?.commitments || [])]
-                                    commitments[i] = { ...commitments[i], task: e.target.value }
-                                    setEditedOutput({ ...editedOutput, decisions: { ...(editedOutput?.decisions || {}), commitments } })
-                                  }}
-                                />
-                                <input
-                                  type="text"
-                                  className="bg-transparent font-black text-[#9090a0] focus:text-[#111116] outline-none text-[11px] w-20 text-right font-sans"
-                                  value={c.due || ''}
-                                  onChange={(e) => {
-                                    const commitments = [...(editedOutput?.decisions?.commitments || [])]
-                                    commitments[i] = { ...commitments[i], due: e.target.value }
-                                    setEditedOutput({ ...editedOutput, decisions: { ...(editedOutput?.decisions || {}), commitments } })
-                                  }}
-                                  placeholder="Due date"
-                                />
-                              </div>
-                            </div>
-                            <button
-                              onClick={() => {
-                                const commitments = (editedOutput.decisions?.commitments || []).filter((_: any, idx: number) => idx !== i)
-                                setEditedOutput({ ...editedOutput, decisions: { ...editedOutput.decisions, commitments } })
-                              }}
-                              className="text-[#9090a0] hover:text-[#dc2626] transition-colors p-1 rounded shrink-0 self-center"
-                            >
-                              <i className="ti ti-x text-[13px]"></i>
-                            </button>
+                    <div className="p-6 space-y-3">
+                      {[
+                        { key: 'academic_counselling', label: 'Academic Counselling' },
+                        { key: 'career_guidance', label: 'Career Guidance' },
+                        { key: 'personal_issues', label: 'Personal Issues' },
+                        { key: 'time_management', label: 'Time Management' },
+                        { key: 'study_skills', label: 'Study Skills' },
+                        { key: 'co_curricular', label: 'Co-curricular Activities' },
+                        { key: 'placement_preparation', label: 'Placement Preparation' },
+                        { key: 'other', label: 'Other' }
+                      ].map((topic) => (
+                        <label key={topic.key} className="flex items-center gap-3 cursor-pointer group">
+                          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
+                            editedOutput.topics_addressed?.[topic.key]
+                              ? 'bg-[#4f6ef7] border-[#4f6ef7]'
+                              : 'border-[#e4e4e9] group-hover:border-[#4f6ef7]'
+                          }`}>
+                            {editedOutput.topics_addressed?.[topic.key] && <i className="ti ti-check text-white text-[10px]"></i>}
                           </div>
-                        ))}
+                          <span className="text-[13px] font-medium text-[#111116]">{topic.label}</span>
+                          <input
+                            type="checkbox"
+                            checked={editedOutput.topics_addressed?.[topic.key] || false}
+                            onChange={(e) => setEditedOutput({
+                              ...editedOutput,
+                              topics_addressed: {
+                                ...(editedOutput.topics_addressed || {}),
+                                [topic.key]: e.target.checked
+                              }
+                            })}
+                            className="hidden"
+                          />
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* ISSUES CHECKLIST */}
+                  <div className="bg-white border border-[#e4e4e9] rounded-2xl shadow-sm overflow-hidden">
+                    <div className="p-5 border-b border-[#f4f4f6] bg-[#fcfcfd]">
+                      <h4 className="text-[11px] font-black text-[#111116] uppercase tracking-widest">Issues Discussed</h4>
+                    </div>
+                    <div className="p-6 space-y-3">
+                      {[
+                        { key: 'attendance', label: 'Attendance' },
+                        { key: 'mid_exam_marks', label: 'Mid Exam Marks' },
+                        { key: 'assignment_submission', label: 'Assignment Submission' },
+                        { key: 'lab_performance', label: 'Lab Performance' },
+                        { key: 'class_participation', label: 'Class Participation' },
+                        { key: 'interest_in_course', label: 'Interest in Course' },
+                        { key: 'motivation', label: 'Motivation' }
+                      ].map((issue) => (
+                        <label key={issue.key} className="flex items-center gap-3 cursor-pointer group">
+                          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
+                            editedOutput.issues_checklist?.[issue.key]
+                              ? 'bg-[#ef4444] border-[#ef4444]'
+                              : 'border-[#e4e4e9] group-hover:border-[#ef4444]'
+                          }`}>
+                            {editedOutput.issues_checklist?.[issue.key] && <i className="ti ti-check text-white text-[10px]"></i>}
+                          </div>
+                          <span className="text-[13px] font-medium text-[#111116]">{issue.label}</span>
+                          <input
+                            type="checkbox"
+                            checked={editedOutput.issues_checklist?.[issue.key] || false}
+                            onChange={(e) => setEditedOutput({
+                              ...editedOutput,
+                              issues_checklist: {
+                                ...(editedOutput.issues_checklist || {}),
+                                [issue.key]: e.target.checked
+                              }
+                            })}
+                            className="hidden"
+                          />
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* TASKS SECTION */}
+              <div className="bg-white border border-[#e4e4e9] rounded-2xl shadow-sm overflow-hidden">
+                <div className="p-6 border-b border-[#f4f4f6] flex justify-between items-center bg-[#fcfcfd]">
+                  <h4 className="text-[11px] font-black text-[#111116] uppercase tracking-[0.2em]">Tasks</h4>
+                  <button
+                    onClick={() => {
+                      const tasks = [...(editedOutput.tasks || []), { text: '', assigned_to: 'student', due_by: 'Next session' }]
+                      setEditedOutput({ ...editedOutput, tasks })
+                    }}
+                    className="flex items-center gap-2 text-[13px] font-bold text-[#4f6ef7] hover:bg-[#eef1fe] px-4 py-2 rounded-xl transition-all"
+                  >
+                    <i className="ti ti-plus text-[14px]"></i> Add Task
+                  </button>
+                </div>
+                <div className="p-8 space-y-4">
+                  {(!editedOutput.tasks || editedOutput.tasks.length === 0) ? (
+                    <p className="text-[13px] text-[#9090a0] font-medium">No tasks assigned</p>
+                  ) : (
+                    editedOutput.tasks.map((task: any, i: number) => (
+                      <div key={i} className="flex gap-4 items-start p-4 bg-[#f4f4f6]/50 border border-[#e4e4e9] rounded-xl">
+                        <div className="flex-1 space-y-3">
+                          <input
+                            type="text"
+                            className="w-full bg-white border border-[#e4e4e9] rounded-lg px-3 py-2 text-[13px] font-medium focus:border-[#4f6ef7] outline-none"
+                            value={task.text || ''}
+                            onChange={(e) => {
+                              const tasks = [...(editedOutput.tasks || [])]
+                              tasks[i] = { ...tasks[i], text: e.target.value }
+                              setEditedOutput({ ...editedOutput, tasks })
+                            }}
+                            placeholder="Task description..."
+                          />
+                          <div className="flex gap-3">
+                            <select
+                              className="bg-white border border-[#e4e4e9] rounded-lg px-3 py-2 text-[11px] font-black uppercase tracking-wider focus:border-[#4f6ef7] outline-none"
+                              value={task.assigned_to || 'student'}
+                              onChange={(e) => {
+                                const tasks = [...(editedOutput.tasks || [])]
+                                tasks[i] = { ...tasks[i], assigned_to: e.target.value }
+                                setEditedOutput({ ...editedOutput, tasks })
+                              }}
+                            >
+                              <option value="student">Student</option>
+                              <option value="mentor">Mentor</option>
+                              <option value="both">Both</option>
+                            </select>
+                            <input
+                              type="text"
+                              className="flex-1 bg-white border border-[#e4e4e9] rounded-lg px-3 py-2 text-[11px] font-medium focus:border-[#4f6ef7] outline-none"
+                              value={task.due_by || ''}
+                              onChange={(e) => {
+                                const tasks = [...(editedOutput.tasks || [])]
+                                tasks[i] = { ...tasks[i], due_by: e.target.value }
+                                setEditedOutput({ ...editedOutput, tasks })
+                              }}
+                              placeholder="Due by (e.g., 'Next session', 'End of semester')"
+                            />
+                          </div>
+                        </div>
                         <button
                           onClick={() => {
-                            const commitments = [...(editedOutput.decisions?.commitments || []), { task: '', assigned_to: 'student', due: '' }]
-                            setEditedOutput({ ...editedOutput, decisions: { ...(editedOutput?.decisions || {}), commitments } })
+                            const tasks = (editedOutput.tasks || []).filter((_: any, idx: number) => idx !== i)
+                            setEditedOutput({ ...editedOutput, tasks })
                           }}
-                          className="mt-3 flex items-center gap-2 text-[13px] font-bold text-[#4f6ef7] hover:bg-[#eef1fe] px-4 py-2 rounded-xl transition-all"
+                          className="text-[#9090a0] hover:text-[#dc2626] transition-colors p-2 rounded shrink-0"
                         >
-                          <i className="ti ti-plus text-[14px]"></i> Add commitment
+                          <i className="ti ti-x text-[16px]"></i>
                         </button>
                       </div>
-                    </div>
-                  </div>
+                    ))
+                  )}
+                </div>
+              </div>
 
-                  {/* RISK FLAGS */}
-                  <div className="bg-white border border-[#e4e4e9] rounded-2xl shadow-sm overflow-hidden">
-                    <div className="p-6 border-b border-[#f4f4f6] bg-[#fcfcfd]">
-                      <h4 className="text-[11px] font-black text-[#111116] uppercase tracking-[0.2em]">Risk Identification</h4>
+              {/* RISK FLAGS */}
+              <div className="bg-white border border-[#e4e4e9] rounded-2xl shadow-sm overflow-hidden">
+                <div className="p-6 border-b border-[#f4f4f6] bg-[#fcfcfd]">
+                  <h4 className="text-[11px] font-black text-[#111116] uppercase tracking-[0.2em]">Risk Flags</h4>
+                </div>
+                <div className="p-8">
+                  {(!editedOutput.risk_flags || editedOutput.risk_flags.length === 0) ? (
+                    <p className="text-[13px] text-[#059669] font-bold">No Risk Flags</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {editedOutput.risk_flags.map((flag: string, i: number) => (
+                        <span key={i} className="px-3 py-1.5 bg-red-50 text-red-700 text-[11px] font-black uppercase tracking-wider rounded-full">
+                          {flag}
+                        </span>
+                      ))}
                     </div>
-                    <div className="p-8">
-                      {(!editedOutput.risk_flags || editedOutput.risk_flags.length === 0) ? (
-                        <p className="text-[13px] text-[#059669] font-bold">No Critical Risks Detected</p>
-                      ) : (
-                        <div className="space-y-6">
-                          {editedOutput.risk_flags.map((flag: any, i: number) => (
-                            <div key={i} className="p-5 bg-red-50 border border-red-100 rounded-xl space-y-3">
-                              <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-black bg-red-600 text-white px-2 py-1 rounded uppercase">{flag.severity}</span>
-                                <span className="text-[14px] font-black text-[#111116]">{flag.flag_code}</span>
-                              </div>
-                              <p className="text-[13px] text-[#52525e] leading-relaxed">{detectClaims(flag.description, ctx)}</p>
-                              <div className="pt-2 border-t border-red-100">
-                                <span className="text-[10px] font-black text-[#059669] uppercase tracking-widest">Recommended: </span>
-                                <span className="text-[13px] font-bold text-[#059669]">{flag.recommended_action}</span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
