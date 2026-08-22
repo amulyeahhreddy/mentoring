@@ -13,17 +13,36 @@ export async function callLLM(
   systemPrompt: string,
   maxTokens: number = 2048
 ): Promise<string> {
-  const response = await groq.chat.completions.create({
-    model: process.env.LLM_MODEL ?? 'llama-3.3-70b-versatile',
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPrompt },
-    ],
-    response_format: { type: 'json_object' },
-    temperature: 0.2,
-    max_tokens: maxTokens,
-  })
-  return response.choices[0].message.content ?? ''
+  try {
+    const response = await groq.chat.completions.create({
+      model: process.env.LLM_MODEL ?? 'llama-3.3-70b-versatile',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
+      response_format: { type: 'json_object' },
+      temperature: 0.2,
+      max_tokens: maxTokens,
+    })
+    return response.choices[0].message.content ?? ''
+  } catch (error: any) {
+    // If we hit a rate limit (429), fallback to a smaller model with higher limits
+    if (error?.status === 429) {
+      console.warn('Rate limit hit for primary model, falling back to llama3-8b-8192...')
+      const fallbackResponse = await groq.chat.completions.create({
+        model: 'llama3-8b-8192',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        response_format: { type: 'json_object' },
+        temperature: 0.2,
+        max_tokens: maxTokens,
+      })
+      return fallbackResponse.choices[0].message.content ?? ''
+    }
+    throw error
+  }
 }
 
 export { groq }

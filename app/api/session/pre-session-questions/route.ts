@@ -139,6 +139,10 @@ If no concerning data exists, return empty red_flags and 2 light check-in questi
     if (cleanedResponse.startsWith('```')) {
       cleanedResponse = cleanedResponse.replace(/^```[\w]*\n/, '').replace(/\n```$/, '');
     }
+    const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      cleanedResponse = jsonMatch[0];
+    }
 
     try {
       const data = JSON.parse(cleanedResponse);
@@ -149,6 +153,7 @@ If no concerning data exists, return empty red_flags and 2 light check-in questi
     } catch (parseError: any) {
       console.error('JSON parse error:', parseError);
       console.error('AI Response was:', cleanedResponse);
+      require('fs').writeFileSync('C:/Users/Amulyaa/Desktop/final fr/mentoring-assistant/scratch_log.txt', raw);
       return NextResponse.json({ error: 'AI returned invalid JSON. Please retry.' }, { status: 500 });
     }
 

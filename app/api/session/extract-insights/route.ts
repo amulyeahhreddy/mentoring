@@ -239,7 +239,13 @@ Output Schema:
       "due_by": "string — e.g. 'Next session' or 'End of semester' or a specific date"
     }
   ],
-  "risk_flags": ["string"]
+  "risk_flags": [
+    {
+      "flag_code": "string — e.g. ACADEMIC_DROP, LOW_ATTENDANCE",
+      "severity": "critical | high | medium",
+      "description": "string — details of the risk"
+    }
+  ]
 }
 `;
 
@@ -247,17 +253,10 @@ Output Schema:
     const userPrompt = contextStr + '--- SESSION TRANSCRIPT ---\n' + transcriptContent;
     const raw = await callLLM(userPrompt, systemPrompt);
 
-    // Strip markdown fences and parse JSON
     let cleanedResponse = raw.trim();
-
-    // Remove markdown code fences if present
-    if (cleanedResponse.startsWith('```')) {
-      cleanedResponse = cleanedResponse.replace(/^```[\w]*\n/, '').replace(/\n```$/, '');
-    }
-
-    // Remove any leading/trailing quotes
-    if (cleanedResponse.startsWith('"') && cleanedResponse.endsWith('"')) {
-      cleanedResponse = cleanedResponse.slice(1, -1);
+    const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      cleanedResponse = jsonMatch[0];
     }
 
     // Parse with Zod validation and retry on failure
@@ -278,14 +277,12 @@ Output Schema:
       parsedInsights = await parseWithRetry(cleanedResponse, async () => {
         // Retry the LLM call if JSON parsing failed
         const retryRaw = await callLLM(userPrompt, systemPrompt);
-        let retryCleaned = retryRaw.trim()
-        if (retryCleaned.startsWith('```')) {
-          retryCleaned = retryCleaned.replace(/^```[\w]*\n/, '').replace(/\n```$/, '');
+        let retryCleaned = retryRaw.trim();
+        const retryMatch = retryCleaned.match(/\{[\s\S]*\}/);
+        if (retryMatch) {
+          retryCleaned = retryMatch[0];
         }
-        if (retryCleaned.startsWith('"') && retryCleaned.endsWith('"')) {
-          retryCleaned = retryCleaned.slice(1, -1);
-        }
-        return retryCleaned
+        return retryCleaned;
       })
     } catch (validationError) {
       console.error('AI output validation failed:', validationError);
@@ -295,13 +292,7 @@ Output Schema:
     }
 
     // Update sessions table with AI output
-    const aiOutput = {
-      observation: parsedInsights.observation,
-      recommendation: parsedInsights.recommendation,
-      sentiment: parsedInsights.sentiment,
-      engagement: parsedInsights.engagement,
-      risk_flags: parsedInsights.risk_flags ?? [],
-    };
+    const aiOutput = parsedInsights;
 
     const { error: updateError } = await supabaseAdmin
       .from('sessions')

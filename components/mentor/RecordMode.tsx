@@ -973,11 +973,19 @@ export default function RecordMode({
                     <p className="text-[13px] text-[#059669] font-bold">No Risk Flags</p>
                   ) : (
                     <div className="flex flex-wrap gap-2">
-                      {editedOutput.risk_flags.map((flag: string, i: number) => (
-                        <span key={i} className="px-3 py-1.5 bg-red-50 text-red-700 text-[11px] font-black uppercase tracking-wider rounded-full">
-                          {flag}
-                        </span>
-                      ))}
+                      {editedOutput.risk_flags.map((flag: any, i: number) => {
+                        const code = typeof flag === 'string' ? flag : (flag.flag_code || 'RISK')
+                        const desc = typeof flag === 'object' ? flag.description : ''
+                        return (
+                          <span 
+                            key={i} 
+                            className="px-3 py-1.5 bg-red-50 text-red-700 text-[11px] font-black uppercase tracking-wider rounded-full cursor-help"
+                            title={desc}
+                          >
+                            {code}
+                          </span>
+                        )
+                      })}
                     </div>
                   )}
                 </div>
